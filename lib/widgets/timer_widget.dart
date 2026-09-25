@@ -67,7 +67,7 @@ class _TimerWidgetState extends State<TimerWidget> with SingleTickerProviderStat
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: isWarning
-              ? Colors.red.shade50.withOpacity(0.8)
+              ? Colors.red.shade50.withValues(alpha: 0.8)
               : Colors.blue.shade50,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
@@ -77,7 +77,7 @@ class _TimerWidgetState extends State<TimerWidget> with SingleTickerProviderStat
           boxShadow: isWarning
               ? [
                   BoxShadow(
-                    color: Colors.red.withOpacity(0.3 * _pulseController.value),
+                    color: Colors.red.withValues(alpha: 0.3 * _pulseController.value),
                     blurRadius: 8,
                     spreadRadius: 2,
                   ),

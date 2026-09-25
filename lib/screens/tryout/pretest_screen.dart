@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
 import '../../widgets/primary_button.dart';
 
 class PretestScreen extends StatelessWidget {
@@ -7,14 +8,17 @@ class PretestScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Petunjuk Tryout')),
+      appBar: AppBar(
+        leading: AppTheme.backButton(context),
+        title: const Text('Petunjuk Tryout'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Simulasi CBT SNBT 2025 #1',
+              'Simulasi Latihan Soal & CBT KPM',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),

@@ -65,7 +65,7 @@ class _PatternCardState extends State<PatternCard> with SingleTickerProviderStat
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 12,
                   offset: const Offset(0, 6),
                 ),
@@ -81,7 +81,7 @@ class _PatternCardState extends State<PatternCard> with SingleTickerProviderStat
                     height: 110,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.12),
+                      color: Colors.white.withValues(alpha: 0.12),
                     ),
                   ),
                 ),
@@ -93,7 +93,7 @@ class _PatternCardState extends State<PatternCard> with SingleTickerProviderStat
                     height: 90,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.08),
+                      color: Colors.white.withValues(alpha: 0.08),
                     ),
                   ),
                 ),
@@ -105,7 +105,7 @@ class _PatternCardState extends State<PatternCard> with SingleTickerProviderStat
                     height: 80,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.06),
+                      color: Colors.white.withValues(alpha: 0.06),
                     ),
                   ),
                 ),
@@ -121,7 +121,7 @@ class _PatternCardState extends State<PatternCard> with SingleTickerProviderStat
                             Container(
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
+                                color: Colors.white.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(14),
                               ),
                               child: Icon(widget.icon, color: Colors.white, size: 26),
@@ -136,7 +136,7 @@ class _PatternCardState extends State<PatternCard> with SingleTickerProviderStat
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.25),
+                                      color: Colors.white.withValues(alpha: 0.25),
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: Text(
@@ -164,7 +164,7 @@ class _PatternCardState extends State<PatternCard> with SingleTickerProviderStat
                                   Text(
                                     widget.subtitle!,
                                     style: TextStyle(
-                                      color: Colors.white.withOpacity(0.9),
+                                      color: Colors.white.withValues(alpha: 0.9),
                                       fontSize: 12,
                                     ),
                                   ),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/question_model.dart';
+import '../../providers/practice_provider.dart';
 import '../../widgets/question_card.dart';
 import '../../widgets/question_navigator_sheet.dart';
 import '../../widgets/timer_widget.dart';
@@ -12,35 +14,32 @@ class ExamScreen extends StatefulWidget {
 }
 
 class _ExamScreenState extends State<ExamScreen> {
-  final List<QuestionModel> _dummyQuestions = List.generate(
-    20,
-    (index) => QuestionModel(
-      id: 'q_${index + 1}',
-      questionText: 'Berapakah hasil dari 2^${index + 1} + ${index * 5}?',
-      options: [
-        QuestionOption(key: 'A', text: '${(1 << (index + 1)) + index * 5}'),
-        QuestionOption(key: 'B', text: '${(1 << (index + 1)) + index * 5 + 2}'),
-        QuestionOption(key: 'C', text: '${(1 << (index + 1)) + index * 5 + 4}'),
-        QuestionOption(key: 'D', text: '${(1 << (index + 1)) + index * 5 - 1}'),
-        QuestionOption(key: 'E', text: 'Tidak ada jawaban yang benar'),
-      ],
-    ),
-  );
-
   int _currentIndex = 0;
   final Map<String, String?> _answers = {};
   final Set<String> _flagged = {};
+  int _elapsedSeconds = 0;
 
-  void _showNavigatorSheet() {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final practice = Provider.of<PracticeProvider>(context, listen: false);
+      if (practice.questions.isEmpty) {
+        practice.startSession('pkg_utbk_1');
+      }
+    });
+  }
+
+  void _showNavigatorSheet(List<QuestionModel> questions) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (ctx) => QuestionNavigatorSheet(
-        totalQuestions: _dummyQuestions.length,
+        totalQuestions: questions.length,
         currentIndex: _currentIndex,
         answers: _answers,
         flaggedQuestions: _flagged,
-        questionIds: _dummyQuestions.map((e) => e.id).toList(),
+        questionIds: questions.map((e) => e.id).toList(),
         onSelectQuestion: (index) {
           setState(() {
             _currentIndex = index;
@@ -51,12 +50,15 @@ class _ExamScreenState extends State<ExamScreen> {
   }
 
   void _submitExam() {
+    final practice = Provider.of<PracticeProvider>(context, listen: false);
+    final questions = practice.questions;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Kumpulkan Jawaban?'),
         content: Text(
-          'Anda telah menjawab ${_answers.length} dari ${_dummyQuestions.length} soal.',
+          'Anda telah menjawab ${_answers.length} dari ${questions.length} butir soal CBT.',
         ),
         actions: [
           TextButton(
@@ -64,9 +66,18 @@ class _ExamScreenState extends State<ExamScreen> {
             child: const Text('Batal'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              Navigator.pushReplacementNamed(context, '/result');
+              // Copy answers to provider
+              for (final e in _answers.entries) {
+                if (e.value != null) {
+                  practice.selectAnswer(e.key, e.value!);
+                }
+              }
+              await practice.submitSession(durationSeconds: _elapsedSeconds);
+              if (mounted) {
+                Navigator.pushReplacementNamed(context, '/result');
+              }
             },
             child: const Text('Kumpulkan'),
           ),
@@ -77,7 +88,30 @@ class _ExamScreenState extends State<ExamScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currentQ = _dummyQuestions[_currentIndex];
+    final practice = Provider.of<PracticeProvider>(context);
+    final questions = practice.questions.isNotEmpty
+        ? practice.questions
+        : List.generate(
+            20,
+            (index) => QuestionModel(
+              id: 'q_${index + 1}',
+              questionText: 'Soal Nomor ${index + 1}: Diketahui f(x) = 2x + 3 dan g(x) = x^2. Tentukan nilai (f o g)(2).',
+              options: [
+                QuestionOption(key: 'A', text: '11'),
+                QuestionOption(key: 'B', text: '14'),
+                QuestionOption(key: 'C', text: '19'),
+                QuestionOption(key: 'D', text: '25'),
+                QuestionOption(key: 'E', text: '36'),
+              ],
+              correctAnswer: 'A',
+            ),
+          );
+
+    if (_currentIndex >= questions.length) {
+      _currentIndex = 0;
+    }
+
+    final currentQ = questions[_currentIndex];
     final qId = currentQ.id;
     final isFlagged = _flagged.contains(qId);
 
@@ -90,7 +124,7 @@ class _ExamScreenState extends State<ExamScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Tryout CBT'),
+          title: const Text('Tryout CBT — IRT'),
           centerTitle: false,
           actions: [
             Padding(
@@ -101,7 +135,7 @@ class _ExamScreenState extends State<ExamScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Waktu habis! Menyerahkan jawaban...')),
                   );
-                  Navigator.pushReplacementNamed(context, '/result');
+                  _submitExam();
                 },
               ),
             ),
@@ -117,6 +151,7 @@ class _ExamScreenState extends State<ExamScreen> {
                 onOptionSelected: (key) {
                   setState(() {
                     _answers[qId] = key;
+                    _elapsedSeconds += 10;
                   });
                 },
               ),
@@ -127,7 +162,7 @@ class _ExamScreenState extends State<ExamScreen> {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, -2),
                   ),
@@ -155,22 +190,22 @@ class _ExamScreenState extends State<ExamScreen> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.grid_view_rounded, color: Colors.blue, size: 28),
-                    onPressed: _showNavigatorSheet,
+                    onPressed: () => _showNavigatorSheet(questions),
                   ),
-                  if (_currentIndex < _dummyQuestions.length - 1)
+                  if (_currentIndex < questions.length - 1)
                     ElevatedButton(
                       onPressed: () {
                         setState(() {
                           _currentIndex++;
                         });
                       },
-                      child: const Text('Lanjut'),
+                      child: const Text('Lanjut ➔'),
                     )
                   else
                     ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00B894)),
                       onPressed: _submitExam,
-                      child: const Text('Submit'),
+                      child: const Text('Selesai ✨'),
                     ),
                 ],
               ),

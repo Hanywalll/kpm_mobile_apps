@@ -7,68 +7,59 @@ import 'tutor/tutor_screen.dart';
 import 'progress/progress_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
-  const MainNavigationScreen({super.key});
+  final int initialIndex;
+  const MainNavigationScreen({super.key, this.initialIndex = 0});
 
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
-  int _currentIndex = 0;
-  late PageController _pageController;
-
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const BelajarScreen(),
-    const LatihanScreen(),
-    const TutorScreen(),
-    const ProgressScreen(),
-  ];
+  late int _currentIndex;
 
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: _currentIndex);
+    _currentIndex = widget.initialIndex;
   }
 
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  void _onPageChanged(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
-  }
+  final List<Widget> _screens = const [
+    HomeScreen(),
+    BelajarScreen(),
+    LatihanScreen(),
+    TutorScreen(),
+    ProgressScreen(),
+  ];
 
   void _onTabTapped(int index) {
-    _currentIndex = index;
-    _pageController.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
+    if (_currentIndex != index) {
+      setState(() {
+        _currentIndex = index;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      body: PageView(
-        controller: _pageController,
-        onPageChanged: _onPageChanged,
-        physics: const BouncingScrollPhysics(),
+      body: IndexedStack(
+        index: _currentIndex,
         children: _screens,
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          color: isDark ? AppTheme.darkCardColor : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+          border: Border.all(
+            color: isDark ? AppTheme.darkBorderColor : AppTheme.borderColor,
+            width: 1.0,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 15,
+              color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+              blurRadius: 16,
               offset: const Offset(0, -4),
             ),
           ],
@@ -80,33 +71,33 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           selectedItemColor: AppTheme.primaryBlue,
-          unselectedItemColor: Colors.grey,
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
-          unselectedLabelStyle: const TextStyle(fontSize: 10),
+          unselectedItemColor: isDark ? AppTheme.darkTextMuted : AppTheme.textMuted,
+          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 11),
+          unselectedLabelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
           items: const [
             BottomNavigationBarItem(
-              icon: Icon(Icons.home_rounded),
-              activeIcon: Icon(Icons.home_rounded, size: 28),
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home_rounded, size: 24),
               label: 'Beranda',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.auto_stories_rounded),
-              activeIcon: Icon(Icons.auto_stories_rounded, size: 28),
+              icon: Icon(Icons.auto_stories_outlined),
+              activeIcon: Icon(Icons.auto_stories_rounded, size: 24),
               label: 'Belajar',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.assignment_rounded),
-              activeIcon: Icon(Icons.assignment_rounded, size: 28),
+              icon: Icon(Icons.assignment_outlined),
+              activeIcon: Icon(Icons.assignment_rounded, size: 24),
               label: 'Latihan',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.video_camera_front_rounded),
-              activeIcon: Icon(Icons.video_camera_front_rounded, size: 28),
+              icon: Icon(Icons.videocam_outlined),
+              activeIcon: Icon(Icons.videocam_rounded, size: 24),
               label: 'Live & Tutor',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.bar_chart_rounded),
-              activeIcon: Icon(Icons.bar_chart_rounded, size: 28),
+              icon: Icon(Icons.insights_outlined),
+              activeIcon: Icon(Icons.insights_rounded, size: 24),
               label: 'Progress',
             ),
           ],

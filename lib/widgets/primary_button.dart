@@ -83,7 +83,7 @@ class _PrimaryButtonState extends State<PrimaryButton> with SingleTickerProvider
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: (widget.backgroundColor ?? AppTheme.primaryBlue).withOpacity(0.3),
+                  color: (widget.backgroundColor ?? AppTheme.primaryBlue).withValues(alpha: 0.3),
                   blurRadius: 12,
                   offset: const Offset(0, 5),
                 ),

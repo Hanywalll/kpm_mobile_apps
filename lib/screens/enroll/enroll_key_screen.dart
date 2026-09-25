@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
 import '../../widgets/primary_button.dart';
 
 class EnrollKeyScreen extends StatefulWidget {
@@ -20,7 +21,10 @@ class _EnrollKeyScreenState extends State<EnrollKeyScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Klaim Enroll Key')),
+      appBar: AppBar(
+        leading: AppTheme.backButton(context),
+        title: const Text('Klaim Enroll Key'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(

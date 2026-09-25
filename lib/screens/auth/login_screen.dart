@@ -95,7 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
+                                  color: Colors.white.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(Icons.school_rounded, color: Colors.white, size: 28),
@@ -130,9 +130,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Masuk dan lanjutkan persiapan lulus PTN Impianmu.',
+                        'Masuk dan raih prestasi terbaik bersama KPM Academy.',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                           fontSize: 13,
                         ),
                       ),
@@ -153,7 +153,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     borderRadius: BorderRadius.circular(28),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: Colors.black.withValues(alpha: 0.08),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),
@@ -167,7 +167,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: AppTheme.accentYellow.withOpacity(0.2),
+                            color: AppTheme.accentYellow.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(color: Colors.amber.shade300),
                           ),

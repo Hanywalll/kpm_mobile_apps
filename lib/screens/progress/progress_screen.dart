@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
-import '../../widgets/pattern_card.dart';
+import '../../providers/practice_provider.dart';
 
 class ProgressScreen extends StatefulWidget {
   const ProgressScreen({super.key});
@@ -9,169 +10,344 @@ class ProgressScreen extends StatefulWidget {
   State<ProgressScreen> createState() => _ProgressScreenState();
 }
 
-class _ProgressScreenState extends State<ProgressScreen> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
+class _ProgressScreenState extends State<ProgressScreen> {
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<PracticeProvider>(context, listen: false).fetchStatistics();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final practice = Provider.of<PracticeProvider>(context);
+    final stats = practice.statistics;
+
+    final double avgScore = stats?.avgScore ?? 0.0;
+    final int totalSessions = stats?.totalSessions ?? 0;
+    final int totalCorrect = stats?.totalCorrect ?? 0;
+    final int totalWrong = stats?.totalWrong ?? 0;
+
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: isDark ? AppTheme.darkBackgroundColor : AppTheme.backgroundColor,
       appBar: AppBar(
-        title: const Text('Progress & Achievement 📊'),
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: AppTheme.primaryBlue,
-          unselectedLabelColor: Colors.grey,
-          indicatorColor: AppTheme.primaryBlue,
-          indicatorWeight: 3,
-          labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-          tabs: const [
-            Tab(text: '📊 Performa & Nilai'),
-            Tab(text: '🏆 Badges & Streak'),
-          ],
-        ),
+        title: const Text('Progress Belajar'),
       ),
-      body: TabBarView(
-        controller: _tabController,
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        physics: const BouncingScrollPhysics(),
         children: [
-          _buildPerformaSection(),
-          _buildAchievementSection(),
-        ],
-      ),
-    );
-  }
+          // 1. Summary Score Card (Modern Blue Gradient)
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: AppTheme.blueGradient,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primaryBlue.withValues(alpha: 0.25),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        'EVALUASI KOMPREHENSIF',
+                        style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                    Text(
+                      '$totalSessions Sesi Selesai',
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 11, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      avgScore.toStringAsFixed(1),
+                      style: const TextStyle(
+                        fontSize: 36,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        height: 1.0,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 4),
+                      child: Text('/ 100', style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold)),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'Rapor Aktif',
+                        style: TextStyle(color: AppTheme.primaryBlueDark, fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
 
-  Widget _buildPerformaSection() {
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      physics: const BouncingScrollPhysics(),
-      children: [
-        PatternCard(
-          title: 'Skor IRT Tryout Terakhir: 850 / 1000',
-          subtitle: 'Peluang Lulus ITB Informatika: 92% 🎯',
-          badge: '📈 ESTIMASI KELULUSAN SANGAT TINGGI',
-          icon: Icons.trending_up_rounded,
-          gradient: AppTheme.ruangguruGradient,
-          onTap: () => Navigator.pushNamed(context, '/result'),
-        ),
-        const SizedBox(height: 10),
-        const Text('Performa per Mata Pelajaran', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 12),
-        _performaTile('TPS Penalaran Umum', '92% Akurasi', 0.92, Colors.green),
-        _performaTile('TPS Kuantitatif', '85% Akurasi', 0.85, Colors.blue),
-        _performaTile('Literasi Bahasa Indonesia', '88% Akurasi', 0.88, Colors.orange),
-        _performaTile('Literasi Bahasa Inggris', '78% Akurasi', 0.78, Colors.purple),
-      ],
-    );
-  }
-
-  Widget _buildAchievementSection() {
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      physics: const BouncingScrollPhysics(),
-      children: [
-        const PatternCard(
-          title: '🔥 7 Hari Belajar Berturut-turut!',
-          subtitle: 'Konsistensi adalah kunci sukses SNBT. Pertahankan!',
-          badge: 'STREAK MASTER',
-          icon: Icons.local_fire_department_rounded,
-          gradient: AppTheme.orangeGradient,
-        ),
-        const SizedBox(height: 10),
-        const Text('Koleksi Badges 🎖️', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 12),
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 3,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          children: [
-            _badgeItem('🔥 7 Day Streak', Colors.orange, true),
-            _badgeItem('🏆 Top 10 IRT', Colors.amber, true),
-            _badgeItem('📚 100 Soal HOTS', Colors.blue, true),
-            _badgeItem('🎯 Perfect Score', Colors.purple, false),
-            _badgeItem('⚡ Speed Master', Colors.green, false),
-            _badgeItem('🎓 SNBT Pass', Colors.red, false),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _performaTile(String mapel, String acc, double progress, Color color) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+          // 2. Quick Correct / Wrong Counter Cards
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(mapel, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              Text(acc, style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 13)),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: AppTheme.bentoBoxDecoration(context: context),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.check_rounded, color: AppTheme.primaryBlue, size: 18),
+                      ),
+                      const SizedBox(width: 10),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '$totalCorrect',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                            ),
+                          ),
+                          Text(
+                            'Jawaban Benar',
+                            style: TextStyle(fontSize: 10, color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: AppTheme.bentoBoxDecoration(context: context),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.close_rounded, color: Colors.red, size: 18),
+                      ),
+                      const SizedBox(width: 10),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '$totalWrong',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                            ),
+                          ),
+                          Text(
+                            'Jawaban Salah',
+                            style: TextStyle(fontSize: 10, color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 8,
-              backgroundColor: color.withOpacity(0.15),
-              valueColor: AlwaysStoppedAnimation<Color>(color),
+          const SizedBox(height: 18),
+
+          // 3. Visualisasi Grafik Batang
+          Text(
+            'Grafik Performa Mingguan',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
             ),
           ),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: AppTheme.bentoBoxDecoration(context: context),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Nilai Evaluasi 7 Hari Terakhir',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppTheme.secondaryBlue,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'Rata-rata: 85%',
+                        style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppTheme.primaryBlueDark),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                _buildBarChart(isDark),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+
+          // 4. Performa per Bidang Studi (Persentase Saja)
+          Text(
+            'Penguasaan Bidang Studi',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 10),
+          _buildSubjectPerformanceCard('Matematika Nalaria Realistik', 92, AppTheme.primaryBlue, isDark),
+          _buildSubjectPerformanceCard('Logika & Penalaran Pola', 85, AppTheme.kpmSky, isDark),
+          _buildSubjectPerformanceCard('Sains & Konsep MIPA', 78, AppTheme.kpmGold, isDark),
+          _buildSubjectPerformanceCard('Eksperimen & Analisis Masalah', 88, AppTheme.primaryPurple, isDark),
         ],
       ),
     );
   }
 
-  Widget _badgeItem(String title, Color color, bool unlocked) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: unlocked ? color.withOpacity(0.12) : Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: unlocked ? color : Colors.grey.shade300),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            unlocked ? Icons.verified_rounded : Icons.lock_rounded,
-            color: unlocked ? color : Colors.grey,
-            size: 30,
-          ),
-          const SizedBox(height: 6),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              color: unlocked ? AppTheme.textPrimary : Colors.grey,
+  // Grafik Batang Flat Modern
+  Widget _buildBarChart(bool isDark) {
+    final List<Map<String, dynamic>> barData = [
+      {'day': 'Sen', 'val': 75},
+      {'day': 'Sel', 'val': 80},
+      {'day': 'Rab', 'val': 65},
+      {'day': 'Kam', 'val': 90},
+      {'day': 'Jum', 'val': 85},
+      {'day': 'Sab', 'val': 95},
+      {'day': 'Min', 'val': 88},
+    ];
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: barData.map((d) {
+        final int val = d['val'] as int;
+        final double heightFactor = (val / 100.0) * 110;
+        final bool isHighest = val >= 95;
+
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '$val',
+              style: TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+                color: isHighest ? AppTheme.primaryBlue : (isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary),
+              ),
             ),
-            textAlign: TextAlign.center,
+            const SizedBox(height: 4),
+            Container(
+              width: 22,
+              height: heightFactor,
+              decoration: BoxDecoration(
+                color: isHighest ? AppTheme.primaryBlue : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              d['day'] as String,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: isHighest ? FontWeight.bold : FontWeight.w500,
+                color: isHighest ? AppTheme.primaryBlue : (isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary),
+              ),
+            ),
+          ],
+        );
+      }).toList(),
+    );
+  }
+
+  // Card Bidang Studi dengan Persentase Murni (Tanpa "Mahir")
+  Widget _buildSubjectPerformanceCard(String subject, int percentage, Color color, bool isDark) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: AppTheme.bentoBoxDecoration(context: context),
+      child: Row(
+        children: [
+          Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              subject,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+              ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              '$percentage%',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: color,
+              ),
+            ),
           ),
         ],
       ),

@@ -15,25 +15,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _whatsappController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
-  String _selectedGrade = 'SMA 12';
   bool _obscurePassword = true;
-
-  final List<String> _gradeOptions = [
-    'SD',
-    'SMP',
-    'SMA 10',
-    'SMA 11',
-    'SMA 12',
-    'Alumni/SNBT',
-  ];
 
   @override
   void dispose() {
     _fullNameController.dispose();
     _emailController.dispose();
-    _whatsappController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -42,11 +32,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (_formKey.currentState!.validate()) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final success = await authProvider.register(
+        name: _fullNameController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
-        fullName: _fullNameController.text.trim(),
-        whatsapp: _whatsappController.text.trim(),
-        gradeLevel: _selectedGrade,
+        phone: _phoneController.text.trim(),
       );
       if (success && mounted) {
         if (Navigator.canPop(context)) {
@@ -62,6 +51,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         );
       }
+    }
+  }
+
+  void _handleGoogleLogin() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final success = await authProvider.loginWithGoogle();
+    if (success && mounted) {
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context, true);
+      } else {
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    } else if (mounted && authProvider.errorMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(authProvider.errorMessage!)),
+      );
     }
   }
 
@@ -84,7 +89,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 15,
                 offset: const Offset(0, 5),
               ),
@@ -137,10 +142,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 14),
                 TextFormField(
-                  controller: _whatsappController,
+                  controller: _phoneController,
                   keyboardType: TextInputType.phone,
                   decoration: InputDecoration(
-                    labelText: 'No. WhatsApp',
+                    labelText: 'No. WhatsApp / Telepon',
                     prefixIcon: const Icon(Icons.phone_outlined, color: AppTheme.primaryBlue),
                     filled: true,
                     fillColor: const Color(0xFFF8F9FA),
@@ -152,31 +157,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   validator: (v) => v == null || v.isEmpty ? 'No. WhatsApp wajib diisi' : null,
                 ),
                 const SizedBox(height: 14),
-                DropdownButtonFormField<String>(
-                  initialValue: _selectedGrade,
-                  decoration: InputDecoration(
-                    labelText: 'Jenjang Pendidikan',
-                    prefixIcon: const Icon(Icons.school_outlined, color: AppTheme.primaryBlue),
-                    filled: true,
-                    fillColor: const Color(0xFFF8F9FA),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                  items: _gradeOptions
-                      .map((g) => DropdownMenuItem(value: g, child: Text(g)))
-                      .toList(),
-                  onChanged: (val) {
-                    if (val != null) setState(() => _selectedGrade = val);
-                  },
-                ),
-                const SizedBox(height: 14),
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
                     labelText: 'Password',
+                    hintText: 'Contoh: Siswa2025!',
+                    helperText: 'Min. 8 karakter (huruf besar, huruf kecil, angka & simbol)',
+                    helperMaxLines: 2,
                     prefixIcon: const Icon(Icons.lock_outlined, color: AppTheme.primaryBlue),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -192,13 +180,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       borderSide: BorderSide.none,
                     ),
                   ),
-                  validator: (v) => v == null || v.length < 6 ? 'Password min. 6 karakter' : null,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Password wajib diisi';
+                    if (v.length < 8) return 'Password minimal 8 karakter';
+                    if (!RegExp(r'[A-Z]').hasMatch(v)) return 'Harus mengandung huruf besar (A-Z)';
+                    if (!RegExp(r'[a-z]').hasMatch(v)) return 'Harus mengandung huruf kecil (a-z)';
+                    if (!RegExp(r'\d').hasMatch(v)) return 'Harus mengandung angka (0-9)';
+                    if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(v)) return 'Harus mengandung simbol (!@#\$ dll)';
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 24),
                 PrimaryButton(
                   text: 'Daftar Sekarang ✨',
                   isLoading: authProvider.state == AuthState.loading,
                   onPressed: _handleRegister,
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    const Expanded(child: Divider()),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      child: Text('atau daftar dengan', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                    ),
+                    const Expanded(child: Divider()),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    side: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  onPressed: _handleGoogleLogin,
+                  icon: const Icon(Icons.g_mobiledata, size: 28, color: Colors.red),
+                  label: const Text(
+                    'Daftar dengan Google',
+                    style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                  ),
                 ),
               ],
             ),

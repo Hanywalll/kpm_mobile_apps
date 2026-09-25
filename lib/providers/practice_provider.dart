@@ -7,31 +7,51 @@ class PracticeProvider with ChangeNotifier {
   final PracticeService _practiceService;
 
   PracticeSessionModel? _currentSession;
+  List<QuestionModel> _questions = [];
   int _currentQuestionIndex = 0;
   final Map<String, String?> _answers = {};
   final Set<String> _flaggedQuestions = {};
   bool _isLoading = false;
   String? _errorMessage;
-  PracticeResultModel? _lastResult;
-  List<PracticeResultModel> _history = [];
+  PracticeSessionModel? _lastResult;
+  List<PracticeSessionModel> _history = [];
+  PracticeStatisticsModel? _statistics;
+  bool _isDisposed = false;
 
   PracticeProvider(this._practiceService);
 
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
+  }
+
+  @override
+  void notifyListeners() {
+    if (!_isDisposed) {
+      super.notifyListeners();
+    }
+  }
+
   PracticeSessionModel? get currentSession => _currentSession;
+  List<QuestionModel> get questions => _questions;
   int get currentQuestionIndex => _currentQuestionIndex;
   Map<String, String?> get answers => _answers;
   Set<String> get flaggedQuestions => _flaggedQuestions;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  PracticeResultModel? get lastResult => _lastResult;
-  List<PracticeResultModel> get history => _history;
+  PracticeSessionModel? get lastResult => _lastResult;
+  List<PracticeSessionModel> get history => _history;
+  PracticeStatisticsModel? get statistics => _statistics;
 
   QuestionModel? get currentQuestion {
-    if (_currentSession == null || _currentSession!.questions.isEmpty) return null;
-    return _currentSession!.questions[_currentQuestionIndex];
+    if (_questions.isEmpty || _currentQuestionIndex < 0 || _currentQuestionIndex >= _questions.length) {
+      return null;
+    }
+    return _questions[_currentQuestionIndex];
   }
 
-  Future<bool> startSession(String practiceId) async {
+  Future<bool> startSession(String packageId, {String cardId = 'card_1', List<QuestionModel>? customQuestions}) async {
     _isLoading = true;
     _errorMessage = null;
     _answers.clear();
@@ -40,7 +60,8 @@ class PracticeProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      _currentSession = await _practiceService.startPractice(practiceId);
+      _currentSession = await _practiceService.startPractice(packageId, cardId: cardId);
+      _questions = customQuestions ?? _generateDefaultQuestions();
       _isLoading = false;
       notifyListeners();
       return true;
@@ -67,20 +88,56 @@ class PracticeProvider with ChangeNotifier {
   }
 
   void goToQuestion(int index) {
-    if (_currentSession != null && index >= 0 && index < _currentSession!.questions.length) {
+    if (index >= 0 && index < _questions.length) {
       _currentQuestionIndex = index;
       notifyListeners();
     }
   }
 
-  Future<bool> submitSession() async {
+  Future<bool> submitSession({int durationSeconds = 1800}) async {
     if (_currentSession == null) return false;
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      _lastResult = await _practiceService.submitAnswers(_currentSession!.id, _answers);
+      // Calculate score & correct answers
+      int correct = 0;
+      int wrong = 0;
+      for (final q in _questions) {
+        final userAns = _answers[q.id];
+        if (userAns != null && userAns.isNotEmpty) {
+          if (q.correctAnswer != null && q.correctAnswer!.toUpperCase() == userAns.toUpperCase()) {
+            correct++;
+          } else if (q.correctAnswer == null) {
+            // Default sample rule
+            if (userAns == 'A' || userAns == 'B') {
+              correct++;
+            } else {
+              wrong++;
+            }
+          } else {
+            wrong++;
+          }
+        }
+      }
+
+      final totalScore = _questions.isNotEmpty
+          ? ((correct / _questions.length) * 1000).toDouble()
+          : 850.0;
+
+      _lastResult = await _practiceService.submitAnswers(
+        _currentSession!.id,
+        _answers,
+        duration: durationSeconds,
+        totalScore: totalScore,
+        correctAnswer: correct,
+        wrongAnswer: wrong,
+      );
+
+      await fetchHistory();
+      await fetchStatistics();
+
       _isLoading = false;
       notifyListeners();
       return true;
@@ -94,7 +151,6 @@ class PracticeProvider with ChangeNotifier {
 
   Future<void> fetchHistory() async {
     _isLoading = true;
-    _errorMessage = null;
     notifyListeners();
 
     try {
@@ -105,5 +161,31 @@ class PracticeProvider with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  Future<void> fetchStatistics() async {
+    try {
+      _statistics = await _practiceService.getStatistics();
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  List<QuestionModel> _generateDefaultQuestions() {
+    return List.generate(
+      20,
+      (index) => QuestionModel(
+        id: 'q_${index + 1}',
+        questionText: 'Soal Nomor ${index + 1}: Diketahui deret aritmatika dengan suku pertama a = ${index + 2} dan beda b = 3. Berapakah nilai suku ke-10 (U10)?',
+        options: [
+          QuestionOption(key: 'A', text: '${(index + 2) + 9 * 3}'),
+          QuestionOption(key: 'B', text: '${(index + 2) + 9 * 3 + 2}'),
+          QuestionOption(key: 'C', text: '${(index + 2) + 9 * 3 - 3}'),
+          QuestionOption(key: 'D', text: '${(index + 2) + 8 * 3}'),
+          QuestionOption(key: 'E', text: 'Tidak dapat ditentukan'),
+        ],
+        correctAnswer: 'A',
+        explanation: 'Rumus suku ke-n deret aritmatika adalah Un = a + (n - 1)b. Untuk U10 = a + 9b.',
+      ),
+    );
   }
 }
