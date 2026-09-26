@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,6 +19,17 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  ImageProvider? _getAvatarImage(String? photo) {
+    if (photo == null || photo.trim().isEmpty) return null;
+    if (photo.startsWith('http://') || photo.startsWith('https://')) {
+      return NetworkImage(photo);
+    }
+    final file = File(photo);
+    if (file.existsSync()) {
+      return FileImage(file);
+    }
+    return NetworkImage(photo);
+  }
   bool _pushNotifications = true;
   bool _studyReminder = true;
   List<TimeOfDay> _reminderTimes = [
@@ -491,9 +503,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       CircleAvatar(
                         radius: 28,
                         backgroundColor: AppTheme.primaryBlue,
-                        backgroundImage: (user?.profilePhoto != null && user!.profilePhoto!.isNotEmpty)
-                            ? NetworkImage(user.profilePhoto!)
-                            : null,
+                        backgroundImage: _getAvatarImage(user?.profilePhoto),
                         child: (user?.profilePhoto == null || user!.profilePhoto!.isEmpty)
                             ? Text(
                                 initialChar,

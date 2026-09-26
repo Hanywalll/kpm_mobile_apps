@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -216,7 +217,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           children: [
             // 1. Fixed Top Header (Greeting, Avatar, Cart, Notifications)
-            _buildModernHeader(context, initialChar, isLoggedIn, user?.fullName, packageProvider.cartCount, isDark),
+            _buildModernHeader(context, initialChar, isLoggedIn, user?.fullName, user?.profilePhoto, packageProvider.cartCount, isDark),
 
             // 2. Scrollable Body (ClampingScrollPhysics to prevent excessive overscroll)
             Expanded(
@@ -332,7 +333,21 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildModernHeader(BuildContext context, String initialChar, bool isLoggedIn, String? fullName, int cartCount, bool isDark) {
+  Widget _buildModernHeader(BuildContext context, String initialChar, bool isLoggedIn, String? fullName, String? profilePhoto, int cartCount, bool isDark) {
+    ImageProvider? avatarImg;
+    if (profilePhoto != null && profilePhoto.trim().isNotEmpty) {
+      if (profilePhoto.startsWith('http://') || profilePhoto.startsWith('https://')) {
+        avatarImg = NetworkImage(profilePhoto);
+      } else {
+        final f = File(profilePhoto);
+        if (f.existsSync()) {
+          avatarImg = FileImage(f);
+        } else {
+          avatarImg = NetworkImage(profilePhoto);
+        }
+      }
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Row(
@@ -353,12 +368,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   CircleAvatar(
                     radius: 20,
                     backgroundColor: isLoggedIn ? AppTheme.primaryBlue : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                    child: isLoggedIn
+                    backgroundImage: isLoggedIn ? avatarImg : null,
+                    child: (isLoggedIn && avatarImg == null)
                         ? Text(
                             initialChar,
                             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
                           )
-                        : const Icon(Icons.person_outline_rounded, color: AppTheme.primaryBlue, size: 22),
+                        : (isLoggedIn ? null : const Icon(Icons.person_outline_rounded, color: AppTheme.primaryBlue, size: 22)),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
