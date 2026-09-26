@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
@@ -16,6 +17,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _pushNotifications = true;
   bool _studyReminder = true;
   TimeOfDay _reminderTime = const TimeOfDay(hour: 19, minute: 0);
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedSettings();
+  }
+
+  Future<void> _loadSavedSettings() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final push = prefs.getBool('kpm_settings_push_notifications') ?? true;
+      final reminder = prefs.getBool('kpm_settings_study_reminder') ?? true;
+      final hour = prefs.getInt('kpm_settings_reminder_hour') ?? 19;
+      final minute = prefs.getInt('kpm_settings_reminder_minute') ?? 0;
+
+      if (mounted) {
+        setState(() {
+          _pushNotifications = push;
+          _studyReminder = reminder;
+          _reminderTime = TimeOfDay(hour: hour, minute: minute);
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _savePushNotifications(bool val) async {
+    setState(() => _pushNotifications = val);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('kpm_settings_push_notifications', val);
+    } catch (_) {}
+  }
+
+  Future<void> _saveStudyReminder(bool val) async {
+    setState(() => _studyReminder = val);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('kpm_settings_study_reminder', val);
+    } catch (_) {}
+  }
+
+  Future<void> _saveReminderTime(TimeOfDay time) async {
+    setState(() => _reminderTime = time);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('kpm_settings_reminder_hour', time.hour);
+      await prefs.setInt('kpm_settings_reminder_minute', time.minute);
+    } catch (_) {}
+  }
 
   void _showChangePasswordDialog() {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -273,9 +323,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
     );
     if (picked != null) {
-      setState(() {
-        _reminderTime = picked;
-      });
+      await _saveReminderTime(picked);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -490,7 +538,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               value: _pushNotifications,
               onChanged: (val) {
-                setState(() => _pushNotifications = val);
+                _savePushNotifications(val);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(val ? 'Notifikasi push diaktifkan 🔔' : 'Notifikasi push dinonaktifkan'),
@@ -520,7 +568,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               value: _studyReminder,
               onChanged: (val) {
-                setState(() => _studyReminder = val);
+                _saveStudyReminder(val);
                 if (val) {
                   _pickReminderTime();
                 }

@@ -217,6 +217,7 @@ class _CartScreenState extends State<CartScreen> {
                                       ),
                                       child: TextField(
                                         controller: _promoController,
+                                        textAlignVertical: TextAlignVertical.center,
                                         textCapitalization: TextCapitalization.characters,
                                         style: TextStyle(
                                           fontSize: 13,
@@ -227,7 +228,8 @@ class _CartScreenState extends State<CartScreen> {
                                           hintText: 'Contoh: KPMJUARA',
                                           hintStyle: TextStyle(fontSize: 12, color: Colors.grey),
                                           border: InputBorder.none,
-                                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                          isDense: true,
+                                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                                         ),
                                       ),
                                     ),

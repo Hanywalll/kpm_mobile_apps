@@ -19,32 +19,22 @@ class PromoPosterDialog extends StatelessWidget {
     this.onAction,
   });
 
-  static const String _prefKeyLastShown = 'kpm_promo_poster_last_shown';
+  static bool _hasShownInCurrentSession = false;
 
-  /// Check whether promo poster should be shown (e.g., once per day or session)
-  static Future<bool> shouldShowPromo() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final lastShownStr = prefs.getString(_prefKeyLastShown);
-      if (lastShownStr == null) return true;
-
-      final lastShown = DateTime.tryParse(lastShownStr);
-      if (lastShown == null) return true;
-
-      final now = DateTime.now();
-      // Show again if more than 12 hours have passed
-      return now.difference(lastShown).inHours >= 12;
-    } catch (_) {
-      return true;
-    }
+  /// Check whether promo poster should be shown (shown on each fresh app launch / session)
+  static Future<bool> shouldShowPromo({bool force = false}) async {
+    if (force) return true;
+    return !_hasShownInCurrentSession;
   }
 
-  /// Mark promo poster as shown
+  /// Mark promo poster as shown for current application lifecycle session
   static Future<void> markAsShown() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_prefKeyLastShown, DateTime.now().toIso8601String());
-    } catch (_) {}
+    _hasShownInCurrentSession = true;
+  }
+
+  /// Reset session flag (for testing or re-launch simulation)
+  static void resetSession() {
+    _hasShownInCurrentSession = false;
   }
 
   /// Helper to display the dialog with smooth entrance animation
