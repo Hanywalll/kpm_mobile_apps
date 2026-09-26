@@ -129,7 +129,7 @@ class PermissionRequestDialog extends StatelessWidget {
               iconColor: const Color(0xFF3B82F6),
               bgColor: const Color(0xFFDBEAFE),
               title: 'Notifikasi & Pengingat',
-              desc: 'Jadwal kelas live, pengingat belajar harian, dan notifikasi nilai CBT.',
+              desc: 'Jadwal kelas live, pengingat belajar harian, dan notifikasi nilai Ujian Online.',
               isDark: isDark,
             ),
             const SizedBox(height: 10),

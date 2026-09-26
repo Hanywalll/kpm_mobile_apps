@@ -86,7 +86,7 @@ class PromoPosterDialog extends StatelessWidget {
           child: PromoPosterDialog(
             imageUrl: imageUrl ?? 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&auto=format&fit=crop&q=80',
             title: title ?? 'Diskon Spesial KPM Academy! 🎉',
-            subtitle: subtitle ?? 'Akses lengkap Paket Bimbel Matematika Nalaria Realistik (MNR), Tryout CBT Nasional, dan AI Tutor 24/7!',
+            subtitle: subtitle ?? 'Akses lengkap Paket Bimbel Matematika Nalaria Realistik (MNR), Simulasi Ujian Online Nasional, dan AI Tutor 24/7!',
             buttonText: buttonText ?? 'Lihat Paket Belajar Sekarang',
             onAction: onAction,
           ),

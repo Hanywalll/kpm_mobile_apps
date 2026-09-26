@@ -14,10 +14,10 @@ class _AllFeaturesScreenState extends State<AllFeaturesScreen> {
 
   final List<Map<String, dynamic>> _featureCategories = [
     {
-      'category': 'Simulasi CBT & Asesmen',
+      'category': 'Simulasi Ujian & Asesmen',
       'items': [
         {
-          'title': 'Tryout CBT',
+          'title': 'Simulasi Ujian Online',
           'icon': Icons.assignment_rounded,
           'color': const Color(0xFF1D4ED8),
           'badge': 'HOT',

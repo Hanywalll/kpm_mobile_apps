@@ -290,7 +290,7 @@ class PackageService {
       PackageModel(
         id: '550e8400-e29b-41d4-a716-446655440005',
         title: 'Paket Full Access Ekosistem KPM Academy 1 Tahun',
-        description: 'Akses tanpa batas ke seluruh materi, modul PDF, rekaman video, simulasi CBT, dan konsultasi AI Tutor selama 1 tahun penuh.',
+        description: 'Akses tanpa batas ke seluruh materi, modul PDF, rekaman video, simulasi ujian online, dan konsultasi AI Tutor selama 1 tahun penuh.',
         kelas: 'Semua Jenjang',
         jenjang: 'Olimpiade',
         price: 499000,

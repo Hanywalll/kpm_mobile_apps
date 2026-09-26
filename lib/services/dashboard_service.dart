@@ -69,9 +69,9 @@ class DashboardService {
       ),
       BannerModel(
         id: 'banner-2',
-        tag: 'TRYOUT CBT',
+        tag: 'UJIAN ONLINE',
         subTag: 'Sistem Skor IRT',
-        title: 'Simulasi Ujian & Tryout CBT',
+        title: 'Simulasi Ujian & Tryout Online',
         subtitle: 'Asah kemampuan dengan ribuan bank soal dan pembahasan lengkap',
         imageUrl: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=900&auto=format&fit=crop&q=80',
         route: '/package_list',

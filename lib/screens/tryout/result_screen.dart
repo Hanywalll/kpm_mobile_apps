@@ -27,10 +27,10 @@ class ResultScreen extends StatelessWidget {
         leading: AppTheme.backButton(context, onPressed: () {
           Navigator.pushReplacementNamed(context, '/home');
         }),
-        title: const Text('Rapor Skor & Evaluasi CBT'),
+        title: const Text('Rapor Skor & Evaluasi Ujian'),
       ),
       body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
+        physics: const ClampingScrollPhysics(),
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -62,7 +62,7 @@ class ResultScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: const Text(
-                          'HASIL CBT KPM',
+                          'HASIL UJIAN KPM',
                           style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800),
                         ),
                       ),

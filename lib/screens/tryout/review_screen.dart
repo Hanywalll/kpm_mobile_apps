@@ -16,11 +16,11 @@ class ReviewScreen extends StatelessWidget {
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
         leading: AppTheme.backButton(context),
-        title: const Text('Pembahasan Soal CBT'),
+        title: const Text('Pembahasan Soal Ujian Online'),
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
-        physics: const BouncingScrollPhysics(),
+        physics: const ClampingScrollPhysics(),
         itemCount: questions.isNotEmpty ? questions.length : 5,
         itemBuilder: (context, index) {
           final q = questions.isNotEmpty ? questions[index] : null;

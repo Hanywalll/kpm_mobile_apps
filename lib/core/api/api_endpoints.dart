@@ -73,7 +73,7 @@ class ApiEndpoints {
   static String simulatePayOrder(String id) => '/orders/$id/pay';
   static String checkMidtransOrder(String id) => '/orders/$id/check-midtrans';
 
-  // Practice & CBT
+  // Practice & Ujian Online
   static const String practiceStart = '/practice/start';
   static const String practiceSubmit = '/practice/submit';
   static const String practiceHistory = '/practice/history';

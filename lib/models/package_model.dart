@@ -93,7 +93,7 @@ class PackageModel {
       return [
         PackageCardItem(
           id: 'card_1',
-          title: 'Tryout Utama CBT',
+          title: 'Tryout Utama Ujian Online',
           description: 'Simulasi ujian dengan sistem penilaian IRT',
           totalQuestions: totalQuestionsCount,
           durationMinutes: timeLimitMinutes ?? 60,
@@ -109,7 +109,7 @@ class PackageModel {
     return [
       PackageCardItem(
         id: 'card_1',
-        title: 'Tryout Utama CBT',
+        title: 'Tryout Utama Ujian Online',
         description: 'Simulasi ujian dengan sistem penilaian IRT',
         totalQuestions: totalQuestionsCount,
         durationMinutes: timeLimitMinutes ?? 60,
@@ -127,7 +127,7 @@ class PackageModel {
         if (decoded is List) return decoded.length;
       } catch (_) {}
     }
-    return 20; // default standard CBT question count
+    return 20; // default standard question count
   }
 
   int get totalQuestions => totalQuestionsCount;

@@ -30,7 +30,7 @@ class _ClaimVoucherScreenState extends State<ClaimVoucherScreen> {
     },
     {
       'code': 'MIPABERSAMA',
-      'title': 'Cashback 15% Tryout CBT',
+      'title': 'Cashback 15% Ujian Online',
       'desc': 'Minimal transaksi Rp 100.000',
       'discount': '15%',
     },
@@ -60,17 +60,18 @@ class _ClaimVoucherScreenState extends State<ClaimVoucherScreen> {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
+          backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Row(
             children: [
-              const Icon(Icons.check_circle_rounded, color: AppTheme.accentGreen),
+              const Icon(Icons.check_circle_rounded, color: AppTheme.primaryBlue),
               const SizedBox(width: 8),
-              const Text('Voucher Berhasil!', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const Text('Voucher Berhasil!', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
             ],
           ),
           content: Text(
             res['message']?.toString() ?? 'Kode voucher ${code.toUpperCase()} berhasil diklaim dan akan otomatis memotong total belanja saat checkout.',
-            style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+            style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
           ),
           actions: [
             ElevatedButton(

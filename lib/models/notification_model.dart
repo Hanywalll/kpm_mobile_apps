@@ -33,4 +33,39 @@ class NotificationModel {
       createdAt: json['created_at']?.toString() ?? DateTime.now().toIso8601String(),
     );
   }
+
+  NotificationModel copyWith({
+    String? id,
+    String? userId,
+    String? type,
+    String? title,
+    String? message,
+    String? data,
+    String? readAt,
+    String? createdAt,
+  }) {
+    return NotificationModel(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      type: type ?? this.type,
+      title: title ?? this.title,
+      message: message ?? this.message,
+      data: data ?? this.data,
+      readAt: readAt ?? this.readAt,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'user_id': userId,
+      'type': type,
+      'title': title,
+      'message': message,
+      'data': data,
+      'read_at': readAt,
+      'created_at': createdAt,
+    };
+  }
 }

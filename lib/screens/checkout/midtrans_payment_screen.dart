@@ -163,7 +163,7 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Midtrans telah memverifikasi pembayaran Anda. Akses paket belajar dan tryout CBT telah diaktifkan.',
+              'Midtrans telah memverifikasi pembayaran Anda. Akses paket belajar dan simulasi ujian online telah diaktifkan.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 12,

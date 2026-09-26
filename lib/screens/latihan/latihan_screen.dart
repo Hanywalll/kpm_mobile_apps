@@ -38,7 +38,7 @@ class _LatihanScreenState extends State<LatihanScreen> with SingleTickerProvider
           preferredSize: const Size.fromHeight(44),
           child: AppTheme.compactTabBar(
             controller: _tabController,
-            tabs: const ['Tryout CBT', 'Soal Harian', 'Bank Soal'],
+            tabs: const ['Ujian Online', 'Soal Harian', 'Bank Soal'],
             context: context,
           ),
         ),
@@ -60,9 +60,9 @@ class _LatihanScreenState extends State<LatihanScreen> with SingleTickerProvider
 
     final List<Map<String, dynamic>> defaultTryouts = [
       {
-        'title': 'Simulasi CBT Matematika Nalaria Terpadu',
+        'title': 'Simulasi Ujian Matematika Nalaria Terpadu',
         'sub': '60 Menit • 20 Soal • Pembahasan Komprehensif',
-        'tag': 'CBT UTAMA',
+        'tag': 'UJIAN UTAMA',
         'pkgId': packages.isNotEmpty ? packages.first.id : 'pkg_kpm_1',
       },
       {
@@ -72,7 +72,7 @@ class _LatihanScreenState extends State<LatihanScreen> with SingleTickerProvider
         'pkgId': packages.length > 1 ? packages[1].id : 'pkg_kpm_2',
       },
       {
-        'title': 'Evaluasi Hasil & Rapor Skor CBT',
+        'title': 'Evaluasi Hasil & Rapor Skor Ujian',
         'sub': 'Lihat detail jawaban, akurasi, dan perbaikan',
         'tag': 'RAPOR SKOR',
         'route': '/result',
@@ -81,7 +81,7 @@ class _LatihanScreenState extends State<LatihanScreen> with SingleTickerProvider
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      physics: const BouncingScrollPhysics(),
+      physics: const ClampingScrollPhysics(),
       itemCount: defaultTryouts.length,
       itemBuilder: (context, index) {
         final item = defaultTryouts[index];
@@ -172,7 +172,7 @@ class _LatihanScreenState extends State<LatihanScreen> with SingleTickerProvider
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      physics: const BouncingScrollPhysics(),
+      physics: const ClampingScrollPhysics(),
       itemCount: soalHarian.length,
       itemBuilder: (context, index) {
         final sh = soalHarian[index];
@@ -246,7 +246,7 @@ class _LatihanScreenState extends State<LatihanScreen> with SingleTickerProvider
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      physics: const BouncingScrollPhysics(),
+      physics: const ClampingScrollPhysics(),
       itemCount: bankSoal.length,
       itemBuilder: (context, index) {
         final bs = bankSoal[index];

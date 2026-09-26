@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -9,8 +9,8 @@ class LocalNotificationService {
 
   static const String _channelId = 'kpm_study_reminder_channel_v1';
   static const String _channelName = 'Pengingat Belajar KPM Academy';
-  static const String _channelDesc = 'Notifikasi jadwal belajar harian, simulasi tryout CBT, dan kelas live KPM Academy';
-  static const int studyReminderNotificationId = 999;
+  static const String _channelDesc = 'Notifikasi jadwal belajar harian, simulasi ujian online, dan kelas live KPM Academy';
+  static const int studyReminderBaseId = 990;
 
   /// Initialize local notification plugin and setup Android channel
   static Future<void> init() async {
@@ -95,6 +95,7 @@ class LocalNotificationService {
       enableVibration: true,
       styleInformation: BigTextStyleInformation(''),
       icon: '@mipmap/ic_launcher',
+      color: Color(0xFF1E40AF), // Deep Blue KPM Academy
     );
 
     const NotificationDetails details = NotificationDetails(
@@ -109,78 +110,75 @@ class LocalNotificationService {
     }
   }
 
-  /// Schedule a daily study reminder at specific hour and minute
-  static Future<void> scheduleDailyStudyReminder({
-    required int hour,
-    required int minute,
-    String title = 'Waktunya Belajar di KPM Academy! ⏰📚',
-    String body = 'Ayo lanjutkan latihan soal Matematika Nalaria & Sains hari ini untuk raih prestasi terbaik!',
-  }) async {
+  /// Schedule multiple daily study reminders (up to 5 times a day)
+  static Future<void> scheduleMultipleDailyStudyReminders(List<TimeOfDay> times) async {
     await init();
+    await cancelAllStudyReminders();
 
-    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-      _channelId,
-      _channelName,
-      channelDescription: _channelDesc,
-      importance: Importance.max,
-      priority: Priority.high,
-      playSound: true,
-      enableVibration: true,
-      styleInformation: BigTextStyleInformation(''),
-      icon: '@mipmap/ic_launcher',
-    );
+    for (int i = 0; i < times.length && i < 5; i++) {
+      final time = times[i];
+      final notificationId = studyReminderBaseId + i;
+      
+      final title = _getMotivationalTitle(time.hour);
+      final body = _getMotivationalBody(time.hour);
 
-    const NotificationDetails details = NotificationDetails(
-      android: androidDetails,
-      iOS: DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: true),
-    );
-
-    try {
-      // Cancel previous reminder first
-      await _plugin.cancel(studyReminderNotificationId);
-
-      final now = tz.TZDateTime.now(tz.local);
-      var scheduledDate = tz.TZDateTime(
-        tz.local,
-        now.year,
-        now.month,
-        now.day,
-        hour,
-        minute,
+      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+        _channelId,
+        _channelName,
+        channelDescription: _channelDesc,
+        importance: Importance.max,
+        priority: Priority.high,
+        playSound: true,
+        enableVibration: true,
+        styleInformation: BigTextStyleInformation(''),
+        icon: '@mipmap/ic_launcher',
+        color: Color(0xFF1E40AF),
       );
 
-      // If scheduled time has already passed today, schedule for tomorrow
-      if (scheduledDate.isBefore(now)) {
-        scheduledDate = scheduledDate.add(const Duration(days: 1));
-      }
-
-      await _plugin.zonedSchedule(
-        studyReminderNotificationId,
-        title,
-        body,
-        scheduledDate,
-        details,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
-        matchDateTimeComponents: DateTimeComponents.time,
+      const NotificationDetails details = NotificationDetails(
+        android: androidDetails,
+        iOS: DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: true),
       );
-    } catch (_) {
-      // Fallback: show immediate confirmation / standard notification
+
       try {
-        await _plugin.show(
-          studyReminderNotificationId,
+        final now = tz.TZDateTime.now(tz.local);
+        var scheduledDate = tz.TZDateTime(
+          tz.local,
+          now.year,
+          now.month,
+          now.day,
+          time.hour,
+          time.minute,
+        );
+
+        if (scheduledDate.isBefore(now)) {
+          scheduledDate = scheduledDate.add(const Duration(days: 1));
+        }
+
+        await _plugin.zonedSchedule(
+          notificationId,
           title,
           body,
+          scheduledDate,
           details,
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+          matchDateTimeComponents: DateTimeComponents.time,
         );
-      } catch (_) {}
+      } catch (_) {
+        try {
+          await _plugin.show(notificationId, title, body, details);
+        } catch (_) {}
+      }
     }
   }
 
-  /// Cancel scheduled study reminder
-  static Future<void> cancelStudyReminder() async {
+  /// Cancel all scheduled study reminders
+  static Future<void> cancelAllStudyReminders() async {
     try {
-      await _plugin.cancel(studyReminderNotificationId);
+      for (int i = 0; i < 10; i++) {
+        await _plugin.cancel(studyReminderBaseId + i);
+      }
     } catch (_) {}
   }
 
@@ -189,5 +187,29 @@ class LocalNotificationService {
     try {
       await _plugin.cancelAll();
     } catch (_) {}
+  }
+
+  static String _getMotivationalTitle(int hour) {
+    if (hour < 11) {
+      return '🌅 Semangat Belajar Pagi di KPM Academy!';
+    } else if (hour < 15) {
+      return '☀️ Waktu Belajar Siang: Asah Logika MNR!';
+    } else if (hour < 18) {
+      return '🌇 Sesi Latihan Sore: Review Materi & Soal!';
+    } else {
+      return '🌙 Evaluasi Belajar Malam: Sukses Bersama KPM!';
+    }
+  }
+
+  static String _getMotivationalBody(int hour) {
+    if (hour < 11) {
+      return 'Awali hari dengan melatih penalaran Matematika Nalaria Realistik (MNR). Ayo selesaikan 5 soal hari ini!';
+    } else if (hour < 15) {
+      return 'Istirahat sejenak sambil diskusi bersama AI Tutor atau tonton video pembahasan materi sains favoritmu!';
+    } else if (hour < 18) {
+      return 'Persiapkan diri untuk simulasi ujian online dan ikuti live class interaktif bersama Master Tutor KPM!';
+    } else {
+      return 'Review hasil skor latihanmu hari ini dan rancang target belajar untuk besok bersama KPM Academy!';
+    }
   }
 }

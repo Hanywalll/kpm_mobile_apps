@@ -58,7 +58,7 @@ class _ExamScreenState extends State<ExamScreen> {
       builder: (ctx) => AlertDialog(
         title: const Text('Kumpulkan Jawaban?'),
         content: Text(
-          'Anda telah menjawab ${_answers.length} dari ${questions.length} butir soal CBT.',
+          'Anda telah menjawab ${_answers.length} dari ${questions.length} butir soal ujian.',
         ),
         actions: [
           TextButton(
@@ -124,7 +124,7 @@ class _ExamScreenState extends State<ExamScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Tryout CBT — IRT'),
+          title: const Text('Simulasi Ujian Online — IRT'),
           centerTitle: false,
           actions: [
             Padding(

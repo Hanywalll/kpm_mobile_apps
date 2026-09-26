@@ -1,61 +1,144 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../core/api/api_client.dart';
 import '../core/api/api_endpoints.dart';
 import '../models/notification_model.dart';
 
 class NotificationService {
   final ApiClient _apiClient;
+  static const String _storageKey = 'kpm_app_notifications_v2';
 
   NotificationService(this._apiClient);
 
+  /// Fetch all notifications from local storage and backend, merging them seamlessly
   Future<List<NotificationModel>> getNotifications() async {
+    List<NotificationModel> localList = await _loadLocalNotifications();
+
+    if (localList.isEmpty) {
+      localList = _getInitialNotifications();
+      await _saveLocalNotifications(localList);
+    }
+
     try {
       final response = await _apiClient.dio.get(ApiEndpoints.notifications);
       final List data = response.data['data'] ?? [];
-      return data.map((e) => NotificationModel.fromJson(e as Map<String, dynamic>)).toList();
-    } on DioException catch (_) {
-      return _getDemoNotifications();
-    }
+      final serverList = data.map((e) => NotificationModel.fromJson(e as Map<String, dynamic>)).toList();
+      
+      // Merge unique server items with local items
+      for (final s in serverList) {
+        if (!localList.any((l) => l.id == s.id)) {
+          localList.insert(0, s);
+        }
+      }
+      await _saveLocalNotifications(localList);
+    } catch (_) {}
+
+    return localList;
   }
 
+  /// Get count of unread notifications
   Future<int> getUnreadCount() async {
-    try {
-      final response = await _apiClient.dio.get(ApiEndpoints.unreadNotificationsCount);
-      return (response.data['data']?['unread_count'] as num?)?.toInt() ?? 0;
-    } on DioException catch (_) {
-      return 2;
-    }
+    final list = await getNotifications();
+    return list.where((n) => !n.isRead).length;
   }
 
+  /// Add a new notification (e.g. from study reminder or exam updates)
+  Future<void> addNotification(NotificationModel notification) async {
+    final list = await _loadLocalNotifications();
+    list.removeWhere((item) => item.id == notification.id);
+    list.insert(0, notification);
+    await _saveLocalNotifications(list);
+  }
+
+  /// Mark a single notification as read
   Future<void> markRead(String id) async {
+    final list = await _loadLocalNotifications();
+    final index = list.indexWhere((n) => n.id == id);
+    if (index >= 0) {
+      list[index] = list[index].copyWith(readAt: DateTime.now().toIso8601String());
+      await _saveLocalNotifications(list);
+    }
+
     try {
       await _apiClient.dio.post(ApiEndpoints.markNotificationRead(id));
     } catch (_) {}
   }
 
+  /// Mark ALL notifications as read (DOES NOT DELETE any notifications)
   Future<void> markAllRead() async {
+    final list = await _loadLocalNotifications();
+    final updatedList = list.map((n) {
+      if (!n.isRead) {
+        return n.copyWith(readAt: DateTime.now().toIso8601String());
+      }
+      return n;
+    }).toList();
+
+    await _saveLocalNotifications(updatedList);
+
     try {
       await _apiClient.dio.post(ApiEndpoints.markAllNotificationsRead);
     } catch (_) {}
   }
 
-  List<NotificationModel> _getDemoNotifications() {
+  // --- Private Local Storage Helpers ---
+
+  Future<List<NotificationModel>> _loadLocalNotifications() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String? raw = prefs.getString(_storageKey);
+      if (raw == null || raw.isEmpty) return [];
+
+      final List decoded = jsonDecode(raw);
+      return decoded.map((e) => NotificationModel.fromJson(Map<String, dynamic>.from(e))).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<void> _saveLocalNotifications(List<NotificationModel> list) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final encoded = jsonEncode(list.map((e) => e.toJson()).toList());
+      await prefs.setString(_storageKey, encoded);
+    } catch (_) {}
+  }
+
+  List<NotificationModel> _getInitialNotifications() {
+    final now = DateTime.now();
     return [
       NotificationModel(
-        id: 'notif_1',
-        userId: 'demo_user_1',
+        id: 'notif_exam_1',
+        userId: 'user_local',
         type: 'tryout',
-        title: '🎉 Tryout Akbar Nasional Dimulai!',
-        message: 'Simulasi Tryout SNBT 2025 #1 sudah dibuka. Ayo uji kemampuanmu sekarang!',
-        createdAt: DateTime.now().subtract(const Duration(hours: 2)).toIso8601String(),
+        title: '📝 Paket Ujian Baru: Simulasi Ujian & Tryout Nasional 2025',
+        message: 'Paket Ujian Online terbaru untuk persiapan SNBT dan Asesmen Nasional telah dibuka. Uji kemampuanmu sekarang!',
+        createdAt: now.subtract(const Duration(minutes: 30)).toIso8601String(),
       ),
       NotificationModel(
-        id: 'notif_2',
-        userId: 'demo_user_1',
+        id: 'notif_exam_2',
+        userId: 'user_local',
+        type: 'tryout',
+        title: '🏆 Paket Ujian Baru: Olimpiade Matematika Nalaria (MNR)',
+        message: 'Paket latihan soal logika & penalaran MNR tingkat SD, SMP, SMA telah ditambahkan ke katalog paket belajar.',
+        createdAt: now.subtract(const Duration(hours: 3)).toIso8601String(),
+      ),
+      NotificationModel(
+        id: 'notif_live_1',
+        userId: 'user_local',
+        type: 'live',
+        title: '🎥 Jadwal Live Class Interaktif KPM',
+        message: 'Sesi bimbingan tatap muka online bersama Master Tutor KPM akan dimulai hari ini pukul 16:00 WIB.',
+        createdAt: now.subtract(const Duration(hours: 6)).toIso8601String(),
+      ),
+      NotificationModel(
+        id: 'notif_promo_1',
+        userId: 'user_local',
         type: 'promo',
-        title: '⚡ Diskon Flash Sale 70% Paket Bimbel',
-        message: 'Dapatkan akses 50x Tryout IRT dan konsultasi AI Tutor dengan harga spesial.',
-        createdAt: DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
+        title: '⚡ Diskon Spesial Paket Belajar s.d 70%',
+        message: 'Gunakan kode promo KPMJUARA saat checkout untuk potongan harga ekstra seluruh paket belajar & ujian!',
+        createdAt: now.subtract(const Duration(days: 1)).toIso8601String(),
       ),
     ];
   }

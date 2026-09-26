@@ -205,14 +205,14 @@ class AppModal {
                 width: 64,
                 height: 64,
                 decoration: BoxDecoration(
-                  color: AppTheme.accentGreen.withValues(alpha: 0.15),
+                  color: AppTheme.primaryBlue.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
-                  border: Border.all(color: AppTheme.accentGreen.withValues(alpha: 0.3), width: 2),
+                  border: Border.all(color: AppTheme.primaryBlue.withValues(alpha: 0.25), width: 2),
                 ),
                 child: const Icon(
-                  Icons.verified_rounded,
-                  color: AppTheme.accentGreen,
-                  size: 36,
+                  Icons.notifications_active_rounded,
+                  color: AppTheme.primaryBlue,
+                  size: 34,
                 ),
               ),
               const SizedBox(height: 16),
@@ -396,14 +396,14 @@ class AppModal {
                 height: 64,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF10B981), Color(0xFF059669)],
+                    colors: [Color(0xFF1E3A8A), Color(0xFF2563EB)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.accentGreen.withValues(alpha: 0.35),
+                      color: AppTheme.primaryBlue.withValues(alpha: 0.35),
                       blurRadius: 16,
                       offset: const Offset(0, 6),
                     ),

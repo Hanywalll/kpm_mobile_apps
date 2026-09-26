@@ -39,7 +39,7 @@ class PracticeSessionModel {
   });
 
   // UI convenience aliases
-  String get title => package?.title ?? 'Sesi Latihan CBT';
+  String get title => package?.title ?? 'Sesi Latihan Ujian';
   double get score => totalScore;
   int get correctCount => correctAnswer;
   int get wrongCount => wrongAnswer;

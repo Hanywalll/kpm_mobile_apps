@@ -28,7 +28,7 @@ class PackageDetailScreen extends StatelessWidget {
       pkg = PackageModel(
         id: 'pkg_kpm_1',
         title: 'Paket Intensif Matematika Nalaria & Sains',
-        description: 'Lengkap dengan Live Class, Bank Soal CBT & Tanya AI Tutor 24/7.',
+        description: 'Lengkap dengan Live Class, Bank Soal Ujian Online & Tanya AI Tutor 24/7.',
         price: 150000,
         discountPrice: 120000,
         isDiscountActive: true,
@@ -138,7 +138,7 @@ class PackageDetailScreen extends StatelessWidget {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                pkg.description.isNotEmpty ? pkg.description : 'Akses penuh seluruh materi dan tryout CBT KPM.',
+                                pkg.description.isNotEmpty ? pkg.description : 'Akses penuh seluruh materi dan simulasi ujian online KPM.',
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(color: Colors.white70, fontSize: 11, height: 1.2),
@@ -194,7 +194,7 @@ class PackageDetailScreen extends StatelessWidget {
                   const SizedBox(height: 10),
 
                   _featureItem(context, Icons.video_library_rounded, 'Video Pembelajaran HD', 'Penjelasan konsep step-by-step dari Master Tutor KPM.', isDark),
-                  _featureItem(context, Icons.assignment_turned_in_rounded, 'Simulasi Tryout CBT Interaktif', 'Sistem penilaian akurat dengan analisis kompetensi mendalam.', isDark),
+                  _featureItem(context, Icons.assignment_turned_in_rounded, 'Simulasi Ujian Online Interaktif', 'Sistem penilaian akurat dengan analisis kompetensi mendalam.', isDark),
                   _featureItem(context, Icons.smart_toy_rounded, 'AI Tutor Cerdas 24/7', 'Bantu konsultasi dan selesaikan soal latihan kapan saja.', isDark),
                   _featureItem(context, Icons.analytics_rounded, 'Analisis Rapor & Progres Belajar', 'Kalkulasi penguasaan materi dan peningkatan skor berkala.', isDark),
 

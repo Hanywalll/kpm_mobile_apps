@@ -43,7 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
       'protected': false,
     },
     {
-      'title': 'Latihan CBT',
+      'title': 'Latihan Ujian',
       'icon': Icons.assignment_outlined,
       'bgColor': Color(0xFFE0F2FE),
       'iconColor': Color(0xFF0284C7),
@@ -398,7 +398,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ],
                           ),
                           Text(
-                            'Klik untuk simpan progres & tryout CBT',
+                            'Klik untuk simpan progres & simulasi ujian',
                             style: TextStyle(
                               fontSize: 11,
                               color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
@@ -684,7 +684,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   onTap: () {
                     AuthGuard.check(
                       context,
-                      featureName: 'Latihan CBT',
+                      featureName: 'Latihan Ujian',
                       onAuthenticated: () => Navigator.pushNamed(context, '/package_list'),
                     );
                   },

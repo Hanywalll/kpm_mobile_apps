@@ -1,10 +1,13 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_theme.dart';
+import '../../models/notification_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../services/local_notification_service.dart';
+import '../../services/notification_service.dart';
 import '../../services/support_service.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -17,7 +20,14 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _pushNotifications = true;
   bool _studyReminder = true;
-  TimeOfDay _reminderTime = const TimeOfDay(hour: 19, minute: 0);
+  List<TimeOfDay> _reminderTimes = [
+    const TimeOfDay(hour: 7, minute: 0),
+    const TimeOfDay(hour: 12, minute: 0),
+    const TimeOfDay(hour: 16, minute: 0),
+    const TimeOfDay(hour: 19, minute: 0),
+  ];
+
+  static const String _prefKeyTimes = 'kpm_settings_reminder_times_v2';
 
   @override
   void initState() {
@@ -30,14 +40,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final prefs = await SharedPreferences.getInstance();
       final push = prefs.getBool('kpm_settings_push_notifications') ?? true;
       final reminder = prefs.getBool('kpm_settings_study_reminder') ?? true;
-      final hour = prefs.getInt('kpm_settings_reminder_hour') ?? 19;
-      final minute = prefs.getInt('kpm_settings_reminder_minute') ?? 0;
+      
+      final String? timesJson = prefs.getString(_prefKeyTimes);
+      List<TimeOfDay> loadedTimes = [];
+      if (timesJson != null && timesJson.isNotEmpty) {
+        final List decoded = jsonDecode(timesJson);
+        loadedTimes = decoded.map((item) {
+          final map = Map<String, dynamic>.from(item);
+          return TimeOfDay(hour: map['hour'] as int, minute: map['minute'] as int);
+        }).toList();
+      }
+
+      if (loadedTimes.isEmpty) {
+        // Migration from old single time setting if exists
+        final oldHour = prefs.getInt('kpm_settings_reminder_hour') ?? 19;
+        final oldMinute = prefs.getInt('kpm_settings_reminder_minute') ?? 0;
+        loadedTimes = [
+          const TimeOfDay(hour: 7, minute: 0),
+          const TimeOfDay(hour: 12, minute: 0),
+          const TimeOfDay(hour: 16, minute: 0),
+          TimeOfDay(hour: oldHour, minute: oldMinute),
+        ];
+      }
 
       if (mounted) {
         setState(() {
           _pushNotifications = push;
           _studyReminder = reminder;
-          _reminderTime = TimeOfDay(hour: hour, minute: minute);
+          _reminderTimes = loadedTimes;
         });
       }
     } catch (_) {}
@@ -57,29 +87,146 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('kpm_settings_study_reminder', val);
       if (val) {
-        await LocalNotificationService.scheduleDailyStudyReminder(
-          hour: _reminderTime.hour,
-          minute: _reminderTime.minute,
-        );
+        await LocalNotificationService.scheduleMultipleDailyStudyReminders(_reminderTimes);
       } else {
-        await LocalNotificationService.cancelStudyReminder();
+        await LocalNotificationService.cancelAllStudyReminders();
       }
     } catch (_) {}
   }
 
-  Future<void> _saveReminderTime(TimeOfDay time) async {
-    setState(() => _reminderTime = time);
+  Future<void> _saveReminderTimes(List<TimeOfDay> times, {String? actionDescription}) async {
+    setState(() => _reminderTimes = times);
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt('kpm_settings_reminder_hour', time.hour);
-      await prefs.setInt('kpm_settings_reminder_minute', time.minute);
+      final encoded = jsonEncode(times.map((t) => {'hour': t.hour, 'minute': t.minute}).toList());
+      await prefs.setString(_prefKeyTimes, encoded);
+
       if (_studyReminder) {
-        await LocalNotificationService.scheduleDailyStudyReminder(
-          hour: time.hour,
-          minute: time.minute,
+        await LocalNotificationService.scheduleMultipleDailyStudyReminders(times);
+      }
+
+      // Record this reminder configuration to the Notification Screen
+      if (mounted) {
+        final notifService = Provider.of<NotificationService>(context, listen: false);
+        final formattedTimes = times.map((t) => '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}').join(', ');
+        await notifService.addNotification(
+          NotificationModel(
+            id: 'notif_reminder_${DateTime.now().millisecondsSinceEpoch}',
+            userId: 'user_local',
+            type: 'reminder',
+            title: '⏰ Pengingat Belajar Harian Diperbarui',
+            message: actionDescription ?? 'Jadwal pengingat belajar aktif untuk pukul $formattedTimes WIB.',
+            createdAt: DateTime.now().toIso8601String(),
+          ),
         );
       }
     } catch (_) {}
+  }
+
+  Future<void> _addReminderTime() async {
+    if (_reminderTimes.length >= 5) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Maksimal 5 jadwal pengingat belajar per hari!'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: const TimeOfDay(hour: 20, minute: 0),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppTheme.primaryBlue,
+              onPrimary: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      final updated = List<TimeOfDay>.from(_reminderTimes)..add(picked);
+      // Sort times chronologically
+      updated.sort((a, b) => (a.hour * 60 + a.minute).compareTo(b.hour * 60 + b.minute));
+      await _saveReminderTimes(updated, actionDescription: 'Jadwal pengingat baru ditambahkan untuk pukul ${picked.format(context)}.');
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Jadwal pengingat pukul ${picked.format(context)} berhasil ditambahkan! ⏰'),
+            backgroundColor: AppTheme.primaryBlue,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _editReminderTime(int index) async {
+    final current = _reminderTimes[index];
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: current,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppTheme.primaryBlue,
+              onPrimary: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      final updated = List<TimeOfDay>.from(_reminderTimes);
+      updated[index] = picked;
+      updated.sort((a, b) => (a.hour * 60 + a.minute).compareTo(b.hour * 60 + b.minute));
+      await _saveReminderTimes(updated, actionDescription: 'Jadwal pengingat diubah ke pukul ${picked.format(context)}.');
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Jadwal berhasil diubah ke pukul ${picked.format(context)} ⏰'),
+            backgroundColor: AppTheme.primaryBlue,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteReminderTime(int index) async {
+    if (_reminderTimes.length <= 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Minimal harus ada 1 jadwal pengingat belajar aktif.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final removed = _reminderTimes[index];
+    final updated = List<TimeOfDay>.from(_reminderTimes)..removeAt(index);
+    await _saveReminderTimes(updated, actionDescription: 'Jadwal pengingat pukul ${removed.format(context)} dihapus.');
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Jadwal pengingat pukul ${removed.format(context)} telah dihapus'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   void _showChangePasswordDialog() {
@@ -122,7 +269,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(success ? 'Password berhasil diperbarui!' : (authProvider.errorMessage ?? 'Gagal mengubah password')),
-                    backgroundColor: success ? const Color(0xFF00B894) : Colors.redAccent,
+                    backgroundColor: success ? const Color(0xFF1E40AF) : Colors.redAccent,
                   ),
                 );
               }
@@ -176,7 +323,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Tiket bantuan berhasil dikirim! Tim kami akan segera merespons.'),
-                      backgroundColor: Color(0xFF00B894),
+                      backgroundColor: Color(0xFF1E40AF),
                     ),
                   );
                 }
@@ -224,9 +371,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: 12),
                 _buildLegalPoint('1. Akun Siswa', 'Setiap akun bersifat personal untuk satu siswa terdaftar. Penyebaran akun atau berbagi akses tidak diperkenankan.'),
-                _buildLegalPoint('2. Hak Cipta & Materi', 'Seluruh modul pembelajaran MNR, video materi, dan bank soal tryout dilindungi hak cipta KPM. Dilarang menggandakan atau menyebarluaskan materi tanpa izin resmi.'),
-                _buildLegalPoint('3. Pembelian & Akses', 'Akses paket belajar, tryout, dan live class aktif secara otomatis setelah pembayaran terverifikasi melalui sistem Midtrans.'),
-                _buildLegalPoint('4. Integritas Belajar & Ujian', 'Peserta tryout dan olimpiade diharapkan menjunjung tinggi kejujuran akademik saat mengerjakan ujian online.'),
+                _buildLegalPoint('2. Hak Cipta & Materi', 'Seluruh modul pembelajaran MNR, video materi, dan bank soal ujian dilindungi hak cipta KPM. Dilarang menggandakan atau menyebarluaskan materi tanpa izin resmi.'),
+                _buildLegalPoint('3. Pembelian & Akses', 'Akses paket belajar, simulasi ujian online, dan live class aktif secara otomatis setelah pembayaran terverifikasi melalui sistem Midtrans.'),
+                _buildLegalPoint('4. Integritas Belajar & Ujian', 'Peserta simulasi ujian online dan olimpiade diharapkan menjunjung tinggi kejujuran akademik saat mengerjakan ujian online.'),
               ],
             ),
           ),
@@ -253,7 +400,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: const [
-            Icon(Icons.privacy_tip_outlined, color: AppTheme.accentGreen, size: 24),
+            Icon(Icons.privacy_tip_outlined, color: AppTheme.primaryBlue, size: 24),
             SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -279,7 +426,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                _buildLegalPoint('1. Pengumpulan Data', 'Kami hanya mengumpulkan data yang diperlukan seperti nama, jenjang kelas, asal sekolah, alamat email, dan riwayat belajar/tryout.'),
+                _buildLegalPoint('1. Pengumpulan Data', 'Kami hanya mengumpulkan data yang diperlukan seperti nama, jenjang kelas, asal sekolah, alamat email, dan riwayat belajar/ujian online.'),
                 _buildLegalPoint('2. Penggunaan Informasi', 'Data digunakan untuk personalisasi materi belajar, penerbitan sertifikat/peringkat olimpiade, dan pengiriman notifikasi pengingat.'),
                 _buildLegalPoint('3. Keamanan Data', 'Kata sandi Anda dienkripsi dengan standar industri (Hash bcrypt) dan kami tidak pernah menjual data siswa kepada pihak ketiga manapun.'),
                 _buildLegalPoint('4. Hak Privasi Anda', 'Anda dapat memperbarui profil atau meminta penghapusan akun sewaktu-waktu melalui Pusat Bantuan KPM.'),
@@ -290,7 +437,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.accentGreen,
+              backgroundColor: AppTheme.primaryBlue,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () => Navigator.pop(ctx),
@@ -321,34 +468,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Future<void> _pickReminderTime() async {
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: _reminderTime,
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppTheme.primaryBlue,
-              onPrimary: Colors.white,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null) {
-      await _saveReminderTime(picked);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Pengingat belajar harian diatur ke pukul ${_reminderTime.format(context)} ⏰'),
-            backgroundColor: AppTheme.accentGreen,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    }
+  String _getTimeLabel(int hour) {
+    if (hour < 11) return 'Pagi';
+    if (hour < 15) return 'Siang';
+    if (hour < 18) return 'Sore';
+    return 'Malam';
   }
 
   @override
@@ -457,7 +581,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ),
                                 ),
                                 Text(
-                                  'Daftar atau masuk untuk simpan progres belajar & tryout.',
+                                  'Daftar atau masuk untuk simpan progres belajar & simulasi ujian online.',
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
@@ -532,7 +656,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 20),
           ],
 
-          _sectionTitle('PREFERENSI & NOTIFIKASI', isDark),
+          _sectionTitle('PREFERENSI & NOTIFIKASI PENGINGAT', isDark),
           _settingsGroup(context, [
             SwitchListTile(
               secondary: const Icon(Icons.notifications_outlined, color: AppTheme.primaryBlue),
@@ -545,7 +669,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
               subtitle: Text(
-                'Jadwal kelas, tryout baru, dan pengumuman',
+                'Jadwal kelas, paket ujian baru, dan pengumuman',
                 style: TextStyle(
                   fontSize: 11,
                   color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
@@ -565,7 +689,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const Divider(height: 1),
             SwitchListTile(
-              secondary: const Icon(Icons.alarm_rounded, color: AppTheme.primaryPurple),
+              secondary: const Icon(Icons.alarm_rounded, color: AppTheme.primaryBlue),
               title: Text(
                 'Pengingat Belajar Harian',
                 style: TextStyle(
@@ -575,7 +699,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
               subtitle: Text(
-                'Ingatkan jadwal belajar harian setiap ${_reminderTime.format(context)}',
+                '${_reminderTimes.length} Jadwal alarm aktif per hari (Maks 5x)',
                 style: TextStyle(
                   fontSize: 11,
                   color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
@@ -584,57 +708,123 @@ class _SettingsScreenState extends State<SettingsScreen> {
               value: _studyReminder,
               onChanged: (val) {
                 _saveStudyReminder(val);
-                if (val) {
-                  _pickReminderTime();
+                if (val && _reminderTimes.isEmpty) {
+                  _addReminderTime();
                 }
               },
             ),
             if (_studyReminder) ...[
               const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.schedule_rounded, color: AppTheme.primaryBlue),
-                title: Text(
-                  'Waktu Pengingat Belajar',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
-                  ),
-                ),
-                subtitle: Text(
-                  'Atur jam pengingat belajar harian',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
-                  ),
-                ),
-                trailing: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryBlue.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _reminderTime.format(context),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                          color: AppTheme.primaryBlue,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'JADWAL PENGINGAT BELAJAR (${_reminderTimes.length}/5)',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                        color: isDark ? AppTheme.darkTextSecondary : AppTheme.primaryBlue,
+                      ),
+                    ),
+                    if (_reminderTimes.length < 5)
+                      GestureDetector(
+                        onTap: _addReminderTime,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.add_rounded, size: 14, color: AppTheme.primaryBlue),
+                              SizedBox(width: 4),
+                              Text(
+                                'Tambah Jam',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.primaryBlue,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 4),
-                      const Icon(Icons.edit_outlined, size: 14, color: AppTheme.primaryBlue),
+                  ],
+                ),
+              ),
+
+              // List of Scheduled Reminder Times
+              ...List.generate(_reminderTimes.length, (index) {
+                final time = _reminderTimes[index];
+                final period = _getTimeLabel(time.hour);
+
+                return ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      '${index + 1}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryBlue,
+                      ),
+                    ),
+                  ),
+                  title: Text(
+                    'Pukul ${time.format(context)} ($period)',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13.5,
+                      color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'Alarm belajar harian berulang',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
+                    ),
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit_outlined, color: AppTheme.primaryBlue, size: 18),
+                        tooltip: 'Ubah Jam',
+                        onPressed: () => _editReminderTime(index),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 18),
+                        tooltip: 'Hapus Jam',
+                        onPressed: () => _deleteReminderTime(index),
+                      ),
                     ],
                   ),
-                ),
-                onTap: _pickReminderTime,
-              ),
+                  onTap: () => _editReminderTime(index),
+                );
+              }),
+
               const Divider(height: 1),
               ListTile(
-                leading: const Icon(Icons.send_to_mobile_rounded, color: AppTheme.accentGreen),
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.send_to_mobile_rounded, color: AppTheme.primaryBlue, size: 18),
+                ),
                 title: Text(
                   'Uji Coba Kirim Notifikasi 🔔',
                   style: TextStyle(
@@ -644,33 +834,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
                 subtitle: Text(
-                  'Kirim notifikasi langsung ke bilah status HP sekarang',
+                  'Kirim notifikasi motivasi belajar langsung ke status bar HP',
                   style: TextStyle(
                     fontSize: 11,
                     color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
                   ),
                 ),
                 trailing: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: AppTheme.accentGreen.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
+                    color: AppTheme.primaryBlue,
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Text(
                     'Kirim 🚀',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: AppTheme.accentGreen),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.white),
                   ),
                 ),
                 onTap: () async {
                   await LocalNotificationService.showInstantNotification(
-                    title: 'Pengingat Belajar KPM Academy ⏰📚',
-                    body: 'Waktunya belajar! Ayo buka modul Matematika Nalaria & latihan soal CBT sekarang!',
+                    title: '⏰ Waktunya Belajar di KPM Academy!',
+                    body: 'Ayo lanjutkan latihan penalaran Matematika Nalaria & Sains hari ini untuk raih prestasi terbaik!',
                   );
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Notifikasi uji coba berhasil dikirim ke bilah status HP! 🔔'),
-                        backgroundColor: AppTheme.accentGreen,
+                        backgroundColor: AppTheme.primaryBlue,
                         behavior: SnackBarBehavior.floating,
                       ),
                     );
@@ -815,7 +1005,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       trailing: trailingText != null
           ? Text(
               trailingText,
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.accentGreen),
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
             )
           : const Icon(Icons.chevron_right_rounded, color: Colors.grey),
       onTap: onTap,

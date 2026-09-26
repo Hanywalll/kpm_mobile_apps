@@ -18,7 +18,7 @@ class PretestScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Simulasi Latihan Soal & CBT KPM',
+              'Simulasi Latihan Soal & Ujian KPM',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
