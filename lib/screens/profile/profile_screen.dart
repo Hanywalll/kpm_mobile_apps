@@ -494,6 +494,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const Divider(height: 1),
                   ListTile(
+                    leading: const Icon(Icons.history_edu_rounded, color: AppTheme.accentOrange),
+                    title: Text(
+                      'Riwayat Pesanan Saya',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                      ),
+                    ),
+                    subtitle: Text(
+                      'Lihat seluruh invoice & status pembayaran',
+                      style: TextStyle(fontSize: 11, color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary),
+                    ),
+                    trailing: const Icon(Icons.chevron_right_rounded, color: Colors.grey),
+                    onTap: () => Navigator.pushNamed(context, '/order_history'),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
                     leading: const Icon(Icons.receipt_long_outlined, color: AppTheme.accentGreen),
                     title: Text(
                       'Resi & Bukti Pembayaran',
