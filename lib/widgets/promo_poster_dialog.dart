@@ -19,22 +19,49 @@ class PromoPosterDialog extends StatelessWidget {
     this.onAction,
   });
 
+  static const String _prefKeyLastShown = 'kpm_promo_poster_last_shown_time';
   static bool _hasShownInCurrentSession = false;
 
-  /// Check whether promo poster should be shown (shown on each fresh app launch / session)
+  /// Check whether promo poster should be shown (shows at most once every 2 hours)
   static Future<bool> shouldShowPromo({bool force = false}) async {
     if (force) return true;
-    return !_hasShownInCurrentSession;
+    if (_hasShownInCurrentSession) return false;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final lastShownStr = prefs.getString(_prefKeyLastShown);
+      if (lastShownStr == null || lastShownStr.isEmpty) {
+        return true;
+      }
+
+      final lastShown = DateTime.tryParse(lastShownStr);
+      if (lastShown == null) return true;
+
+      final now = DateTime.now();
+      // Jeda sekitar 2 jam (120 menit) sekali
+      final differenceInMinutes = now.difference(lastShown).inMinutes;
+      return differenceInMinutes >= 120;
+    } catch (_) {
+      return true;
+    }
   }
 
-  /// Mark promo poster as shown for current application lifecycle session
+  /// Mark promo poster as shown and record the timestamp
   static Future<void> markAsShown() async {
     _hasShownInCurrentSession = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_prefKeyLastShown, DateTime.now().toIso8601String());
+    } catch (_) {}
   }
 
-  /// Reset session flag (for testing or re-launch simulation)
-  static void resetSession() {
+  /// Reset session flag and timer (useful for manual testing)
+  static Future<void> resetInterval() async {
     _hasShownInCurrentSession = false;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_prefKeyLastShown);
+    } catch (_) {}
   }
 
   /// Helper to display the dialog with smooth entrance animation
