@@ -14,6 +14,7 @@ import '../../services/dashboard_service.dart';
 import '../../services/video_service.dart';
 import '../../widgets/auth_guard_bottom_sheet.dart';
 import '../../widgets/custom_alert_dialog.dart';
+import '../../widgets/promo_poster_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -107,6 +108,29 @@ class _HomeScreenState extends State<HomeScreen> {
     _startAutoSlider();
     _loadBanners();
     _loadVideos();
+    _checkAndShowPromoPoster();
+  }
+
+  void _checkAndShowPromoPoster() {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final shouldShow = await PromoPosterDialog.shouldShowPromo();
+      if (shouldShow && mounted) {
+        final promoBanner = _banners.isNotEmpty ? _banners.first : null;
+        PromoPosterDialog.show(
+          context,
+          imageUrl: promoBanner?.imageUrl ?? 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&auto=format&fit=crop&q=80',
+          title: promoBanner?.title ?? 'Diskon Spesial Siswa KPM! 🎉',
+          subtitle: promoBanner?.subtitle ?? 'Akses ribuan soal MNR, video materi, dan bimbingan AI Tutor 24/7 sekarang!',
+          onAction: () {
+            if (promoBanner != null && promoBanner.route != null && promoBanner.route!.isNotEmpty) {
+              Navigator.pushNamed(context, promoBanner.route!);
+            } else {
+              Navigator.pushNamed(context, '/package_list');
+            }
+          },
+        );
+      }
+    });
   }
 
   void _loadBanners() async {

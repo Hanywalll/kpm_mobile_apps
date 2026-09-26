@@ -517,3 +517,126 @@ class AppModal {
     );
   }
 }
+
+class CustomAlertDialog {
+  static Future<bool?> show(
+    BuildContext context, {
+    required String title,
+    required String message,
+    String confirmText = 'Lanjutkan',
+    String cancelText = 'Batal',
+    bool isDanger = false,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+        child: Container(
+          padding: const EdgeInsets.all(22),
+          decoration: BoxDecoration(
+            color: isDark ? AppTheme.darkCardColor : Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
+              ),
+            ],
+            border: Border.all(
+              color: isDark ? AppTheme.darkBorderColor : AppTheme.borderColor,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  color: isDanger
+                      ? Colors.redAccent.withValues(alpha: 0.12)
+                      : AppTheme.primaryBlue.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isDanger ? Icons.warning_amber_rounded : Icons.help_outline_rounded,
+                  color: isDanger ? Colors.redAccent : AppTheme.primaryBlue,
+                  size: 30,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                  color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: isDark ? Colors.white70 : AppTheme.textPrimary,
+                        side: BorderSide(
+                          color: isDark ? AppTheme.darkBorderColor : AppTheme.borderColor,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: Text(
+                        cancelText,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isDanger ? Colors.redAccent : AppTheme.primaryBlue,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        elevation: 2,
+                      ),
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: Text(
+                        confirmText,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+

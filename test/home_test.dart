@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'package:kpm_academy/core/theme/app_theme.dart';
 import 'package:kpm_academy/core/api/api_client.dart';
@@ -32,6 +33,7 @@ void main() {
 
   setUp(() {
     FlutterSecureStorage.setMockInitialValues({});
+    SharedPreferences.setMockInitialValues({});
   });
 
   testWidgets('Test HomeScreen rendering', (WidgetTester tester) async {
