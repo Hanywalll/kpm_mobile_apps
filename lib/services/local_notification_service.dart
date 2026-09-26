@@ -21,7 +21,7 @@ class LocalNotificationService {
       tz.initializeTimeZones();
       _setupLocalTimezone();
 
-      const AndroidInitializationSettings androidSettings = AndroidInitializationSettings('@mipmap/ic_notification');
+      const AndroidInitializationSettings androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
       const DarwinInitializationSettings iosSettings = DarwinInitializationSettings(
         requestAlertPermission: true,
         requestBadgePermission: true,
@@ -120,8 +120,8 @@ class LocalNotificationService {
       priority: Priority.high,
       playSound: true,
       enableVibration: true,
-      icon: '@mipmap/ic_notification',
-      color: Color(0xFF1D4ED8), // KPM Blue branding circle
+      icon: '@mipmap/ic_launcher',
+      largeIcon: DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
       styleInformation: BigTextStyleInformation(''),
     );
   }
