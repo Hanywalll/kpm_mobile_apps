@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/practice_provider.dart';
 import '../../widgets/primary_button.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -32,6 +33,13 @@ class _LoginScreenState extends State<LoginScreen> {
         _passwordController.text.trim(),
       );
       if (success && mounted) {
+        // Segera muat statistik dan riwayat belajar akun ini
+        try {
+          final practiceProvider = Provider.of<PracticeProvider>(context, listen: false);
+          practiceProvider.fetchStatistics();
+          practiceProvider.fetchHistory();
+        } catch (_) {}
+
         if (Navigator.canPop(context)) {
           Navigator.pop(context, true);
         } else {
@@ -270,36 +278,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           isLoading: authProvider.state == AuthState.loading,
                           onPressed: _handleLogin,
                         ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            const Expanded(child: Divider()),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 10),
-                              child: Text('atau masuk dengan', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-                            ),
-                            const Expanded(child: Divider()),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        OutlinedButton.icon(
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: const Size(double.infinity, 50),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            side: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          onPressed: _handleGoogleLogin,
-                          icon: Image.network(
-                            'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg',
-                            height: 22,
-                            errorBuilder: (_, __, ___) => const Icon(Icons.g_mobiledata, size: 28, color: Colors.red),
-                          ),
-                          label: const Text(
-                            'Masuk dengan Google',
-                            style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 24),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [

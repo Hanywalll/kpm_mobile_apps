@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/practice_provider.dart';
 import '../../widgets/primary_button.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -38,6 +39,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
         phone: _phoneController.text.trim(),
       );
       if (success && mounted) {
+        // Segera muat statistik dan riwayat belajar akun baru ini
+        try {
+          final practiceProvider = Provider.of<PracticeProvider>(context, listen: false);
+          practiceProvider.fetchStatistics();
+          practiceProvider.fetchHistory();
+        } catch (_) {}
+
         if (Navigator.canPop(context)) {
           Navigator.pop(context, true);
         } else {
@@ -195,31 +203,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   text: 'Daftar Sekarang ✨',
                   isLoading: authProvider.state == AuthState.loading,
                   onPressed: _handleRegister,
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    const Expanded(child: Divider()),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      child: Text('atau daftar dengan', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-                    ),
-                    const Expanded(child: Divider()),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 50),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    side: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  onPressed: _handleGoogleLogin,
-                  icon: const Icon(Icons.g_mobiledata, size: 28, color: Colors.red),
-                  label: const Text(
-                    'Daftar dengan Google',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
-                  ),
                 ),
               ],
             ),

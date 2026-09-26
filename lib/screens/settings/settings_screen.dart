@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/notification_model.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/practice_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../services/local_notification_service.dart';
 import '../../services/notification_service.dart';
@@ -922,6 +923,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
               onPressed: () async {
+                try {
+                  Provider.of<PracticeProvider>(context, listen: false).reset();
+                } catch (_) {}
                 await authProvider.logout();
                 if (context.mounted) {
                   Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);

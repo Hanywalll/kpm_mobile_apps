@@ -111,7 +111,22 @@ class _HomeScreenState extends State<HomeScreen> {
     _startAutoSlider();
     _loadBanners();
     _loadVideos();
+    _loadUserProgress();
     _checkAndShowDialogs();
+  }
+
+  void _loadUserProgress() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      final practice = Provider.of<PracticeProvider>(context, listen: false);
+      if (auth.isAuthenticated) {
+        practice.fetchStatistics();
+        practice.fetchHistory();
+      } else {
+        practice.reset();
+      }
+    });
   }
 
   void _checkAndShowDialogs() {
@@ -633,9 +648,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildProgresBelajarCard(BuildContext context, bool isDark, bool isLoggedIn) {
     final practiceProvider = Provider.of<PracticeProvider>(context);
     final stats = practiceProvider.statistics;
-    final double averageScore = stats?.avgScore ?? 0.0;
-    final int totalPractice = stats?.totalSessions ?? practiceProvider.history.length;
-    final int correctAnswers = stats?.totalCorrect ?? 0;
+    final double averageScore = isLoggedIn ? (stats?.avgScore ?? 0.0) : 0.0;
+    final int totalPractice = isLoggedIn ? (stats?.totalSessions ?? practiceProvider.history.length) : 0;
+    final int correctAnswers = isLoggedIn ? (stats?.totalCorrect ?? 0) : 0;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),

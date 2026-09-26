@@ -111,10 +111,10 @@ class PracticeService {
       return PracticeStatisticsModel.fromJson(response.data['data'] ?? response.data);
     } on DioException catch (_) {
       return PracticeStatisticsModel(
-        totalSessions: 5,
-        avgScore: 825.5,
-        totalCorrect: 82,
-        totalWrong: 18,
+        totalSessions: 0,
+        avgScore: 0.0,
+        totalCorrect: 0,
+        totalWrong: 0,
       );
     }
   }

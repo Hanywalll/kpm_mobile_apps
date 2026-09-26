@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/practice_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -711,6 +712,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 icon: const Icon(Icons.logout_rounded),
                 label: const Text('Keluar Akun', style: TextStyle(fontWeight: FontWeight.bold)),
                 onPressed: () async {
+                  try {
+                    Provider.of<PracticeProvider>(context, listen: false).reset();
+                  } catch (_) {}
                   await authProvider.logout();
                   if (context.mounted) {
                     Navigator.pushReplacementNamed(context, '/home');

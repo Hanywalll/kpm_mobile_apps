@@ -149,6 +149,24 @@ class PracticeProvider with ChangeNotifier {
     }
   }
 
+  void reset() {
+    _currentSession = null;
+    _questions = [];
+    _currentQuestionIndex = 0;
+    _answers.clear();
+    _flaggedQuestions.clear();
+    _errorMessage = null;
+    _lastResult = null;
+    _history = [];
+    _statistics = PracticeStatisticsModel(
+      totalSessions: 0,
+      avgScore: 0.0,
+      totalCorrect: 0,
+      totalWrong: 0,
+    );
+    notifyListeners();
+  }
+
   Future<void> fetchHistory() async {
     _isLoading = true;
     notifyListeners();
@@ -167,7 +185,15 @@ class PracticeProvider with ChangeNotifier {
     try {
       _statistics = await _practiceService.getStatistics();
       notifyListeners();
-    } catch (_) {}
+    } catch (_) {
+      _statistics = PracticeStatisticsModel(
+        totalSessions: 0,
+        avgScore: 0.0,
+        totalCorrect: 0,
+        totalWrong: 0,
+      );
+      notifyListeners();
+    }
   }
 
   List<QuestionModel> _generateDefaultQuestions() {
