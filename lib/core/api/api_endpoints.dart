@@ -50,10 +50,24 @@ class ApiEndpoints {
   static String markNotificationRead(String id) => '/notifications/$id/read';
   static const String markAllNotificationsRead = '/notifications/read-all';
 
+  // Banners
+  static const String banners = '/banners';
+
+  // Live Classes
+  static const String liveClasses = '/live-classes';
+
+  // Modules & Materials
+  static const String modules = '/modules';
+
+  // Vouchers
+  static const String claimVoucher = '/vouchers/claim';
+  static const String validateVoucher = '/vouchers/validate';
+
   // Packages & Orders
   static const String packages = '/packages';
   static String packageDetail(String id) => '/packages/$id';
   static const String orders = '/orders';
+  static const String myOrders = '/orders/my';
   static String orderDetail(String id) => '/orders/$id';
   static const String orderStatus = '/orders/status';
   static String simulatePayOrder(String id) => '/orders/$id/pay';

@@ -97,13 +97,6 @@ class _AllFeaturesScreenState extends State<AllFeaturesScreen> {
           'route': '/home',
         },
         {
-          'title': 'Target Medali',
-          'icon': Icons.flag_rounded,
-          'color': const Color(0xFF3B82F6),
-          'badge': 'TARGET',
-          'action': 'target_belajar',
-        },
-        {
           'title': 'Papan Skor',
           'icon': Icons.emoji_events_rounded,
           'color': const Color(0xFFF59E0B),
@@ -234,7 +227,7 @@ class _AllFeaturesScreenState extends State<AllFeaturesScreen> {
         title: const Text('Semua Layanan & Fitur'),
       ),
       body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
+        physics: const ClampingScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

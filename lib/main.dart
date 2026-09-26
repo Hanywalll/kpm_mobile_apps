@@ -27,8 +27,10 @@ import 'screens/checkout/midtrans_payment_screen.dart';
 import 'screens/checkout/payment_receipt_screen.dart';
 import 'screens/enroll/enroll_key_screen.dart';
 import 'screens/features/all_features_screen.dart';
+import 'screens/live_class/live_class_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'screens/notification/notification_screen.dart';
+import 'screens/orders/order_history_screen.dart';
 import 'screens/packages/package_detail_screen.dart';
 import 'screens/packages/package_list_screen.dart';
 import 'screens/profile/profile_screen.dart';
@@ -41,6 +43,7 @@ import 'screens/tryout/result_screen.dart';
 import 'screens/tryout/review_screen.dart';
 import 'screens/video/video_list_screen.dart';
 import 'screens/video/video_player_screen.dart';
+import 'screens/voucher/claim_voucher_screen.dart';
 
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -108,8 +111,11 @@ class KPMApp extends StatelessWidget {
               '/review': (context) => const ReviewScreen(),
               '/video_list': (context) => const VideoListScreen(),
               '/video_player': (context) => const VideoPlayerScreen(),
+              '/live_class': (context) => const LiveClassScreen(),
+              '/order_history': (context) => const OrderHistoryScreen(),
+              '/claim_voucher': (context) => const ClaimVoucherScreen(),
               '/ai_chat': (context) => const ChatScreen(),
-              '/enroll_key': (context) => const EnrollKeyScreen(),
+              '/enroll_key': (context) => const ClaimVoucherScreen(),
               '/all_features': (context) => const AllFeaturesScreen(),
               '/search': (context) => const SearchScreen(),
               '/profile': (context) => const ProfileScreen(),

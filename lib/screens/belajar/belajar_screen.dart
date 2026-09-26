@@ -2,8 +2,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../models/module_model.dart';
 import '../../models/video_model.dart';
 import '../../providers/package_provider.dart';
+import '../../services/dashboard_service.dart';
 import '../../services/video_service.dart';
 
 class BelajarScreen extends StatefulWidget {
@@ -16,12 +18,24 @@ class BelajarScreen extends StatefulWidget {
 class _BelajarScreenState extends State<BelajarScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   List<VideoModel> _videos = VideoService.getDemoVideosList();
+  List<ModuleModel> _modules = DashboardService.getDefaultModules();
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _loadVideos();
+    _loadModules();
+  }
+
+  void _loadModules() async {
+    try {
+      final dashboardService = Provider.of<DashboardService>(context, listen: false);
+      final list = await dashboardService.getModules();
+      if (mounted && list.isNotEmpty) {
+        setState(() => _modules = list);
+      }
+    } catch (_) {}
   }
 
   void _loadVideos() async {
@@ -197,19 +211,12 @@ class _BelajarScreenState extends State<BelajarScreen> with SingleTickerProvider
 
   // Materi & Modul (Clean & Compact)
   Widget _buildMateriSection(bool isDark) {
-    final List<Map<String, dynamic>> moduls = [
-      {'title': 'Konsep Matematika Nalaria Realistik (MNR)', 'sub': '4 Bab Materi • Modul 1-4', 'tag': 'Matematika'},
-      {'title': 'Operasi Pecahan & Aljabar Sederhana', 'sub': '3 Bab Materi • Modul 5-7', 'tag': 'Aljabar'},
-      {'title': 'Geometri & Penalaran Spasial Dasar', 'sub': '5 Bab Materi • Modul 8-12', 'tag': 'Geometri'},
-      {'title': 'Sains Alam & Metode Ilmiah MIPA', 'sub': '4 Bab Materi • Modul 13-16', 'tag': 'Sains/IPA'},
-    ];
-
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       physics: const ClampingScrollPhysics(),
-      itemCount: moduls.length,
+      itemCount: _modules.length,
       itemBuilder: (context, index) {
-        final m = moduls[index];
+        final m = _modules[index];
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -231,7 +238,7 @@ class _BelajarScreenState extends State<BelajarScreen> with SingleTickerProvider
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      m['title'] as String,
+                      m.title,
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
@@ -242,7 +249,7 @@ class _BelajarScreenState extends State<BelajarScreen> with SingleTickerProvider
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      m['sub'] as String,
+                      '${m.description} • ${m.fileSize}',
                       style: TextStyle(
                         fontSize: 11,
                         color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
@@ -251,7 +258,7 @@ class _BelajarScreenState extends State<BelajarScreen> with SingleTickerProvider
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded, size: 20, color: Colors.grey),
+              const Icon(Icons.download_for_offline_outlined, size: 20, color: AppTheme.primaryBlue),
             ],
           ),
         );

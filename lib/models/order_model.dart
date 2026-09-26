@@ -37,6 +37,33 @@ class OrderModel {
 
   bool get isPaid => paymentStatus.toLowerCase() == 'paid';
   bool get isPending => paymentStatus.toLowerCase() == 'pending';
+  bool get isSuccess => isPaid || paymentStatus.toLowerCase() == 'settlement' || paymentStatus.toLowerCase() == 'success';
+  bool get isExpired => paymentStatus.toLowerCase() == 'expire' || paymentStatus.toLowerCase() == 'expired' || paymentStatus.toLowerCase() == 'cancel';
+  String get status => paymentStatus;
+  String get packageTitle => package?.title ?? 'Paket Belajar KPM';
+  double get amount => totalPrice;
+  String get paymentMethod => paymentType ?? 'Midtrans Payment';
+  String? get snapRedirectUrl => paymentUrl;
+  DateTime get createdDateTime => createdAt != null ? (DateTime.tryParse(createdAt!) ?? DateTime.now()) : DateTime.now();
+
+  String get statusFormatted {
+    switch (paymentStatus.toLowerCase()) {
+      case 'paid':
+      case 'settlement':
+      case 'success':
+        return 'BERHASIL';
+      case 'pending':
+        return 'MENUNGGU';
+      case 'expire':
+      case 'expired':
+        return 'KEDALUWARSA';
+      case 'cancel':
+      case 'failed':
+        return 'GAGAL';
+      default:
+        return paymentStatus.toUpperCase();
+    }
+  }
 
   factory OrderModel.fromJson(Map<String, dynamic> json) {
     return OrderModel(

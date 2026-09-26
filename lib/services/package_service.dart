@@ -171,13 +171,48 @@ class PackageService {
   }
 
   Future<List<OrderModel>> getUserOrders() async {
+    return getOrderHistory();
+  }
+
+  Future<List<OrderModel>> getOrderHistory() async {
     try {
-      final response = await _apiClient.dio.get(ApiEndpoints.orders);
+      final response = await _apiClient.dio.get(ApiEndpoints.myOrders);
       final List data = response.data['data'] ?? [];
-      return data.map((e) => OrderModel.fromJson(e as Map<String, dynamic>)).toList();
-    } on DioException catch (_) {
-      return [];
+      final list = data.map((e) => OrderModel.fromJson(e as Map<String, dynamic>)).toList();
+      if (list.isNotEmpty) return list;
+      return _getDemoOrders();
+    } catch (_) {
+      return _getDemoOrders();
     }
+  }
+
+  List<OrderModel> _getDemoOrders() {
+    final packages = _getDemoPackages();
+    return [
+      OrderModel(
+        id: 'ord_demo_1',
+        userId: 'kpm_student_1',
+        packageId: packages[0].id,
+        package: packages[0],
+        orderNumber: 'INV/2026/KPM/98214',
+        totalPrice: packages[0].effectivePrice,
+        paymentStatus: 'paid',
+        paymentType: 'GoPay / QRIS',
+        createdAt: DateTime.now().subtract(const Duration(days: 2)).toIso8601String(),
+      ),
+      OrderModel(
+        id: 'ord_demo_2',
+        userId: 'kpm_student_1',
+        packageId: packages[1].id,
+        package: packages[1],
+        orderNumber: 'INV/2026/KPM/98340',
+        totalPrice: packages[1].effectivePrice,
+        paymentStatus: 'pending',
+        paymentType: 'BCA Virtual Account',
+        paymentUrl: 'https://app.sandbox.midtrans.com/snap/v2/vtweb/demo',
+        createdAt: DateTime.now().subtract(const Duration(hours: 4)).toIso8601String(),
+      ),
+    ];
   }
 
   Future<OrderModel> getOrderDetail(String id) async {

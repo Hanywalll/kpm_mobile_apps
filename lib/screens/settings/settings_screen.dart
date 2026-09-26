@@ -124,6 +124,138 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  void _showTermsDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: const [
+            Icon(Icons.description_outlined, color: AppTheme.primaryBlue, size: 24),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Syarat & Ketentuan',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            physics: const ClampingScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Selamat datang di aplikasi pembelajaran KPM Academy (Klinik Pendidikan MIPA). Dengan menggunakan aplikasi ini, Anda menyetujui ketentuan berikut:',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _buildLegalPoint('1. Akun Siswa', 'Setiap akun bersifat personal untuk satu siswa terdaftar. Penyebaran akun atau berbagi akses tidak diperkenankan.'),
+                _buildLegalPoint('2. Hak Cipta & Materi', 'Seluruh modul pembelajaran MNR, video materi, dan bank soal tryout dilindungi hak cipta KPM. Dilarang menggandakan atau menyebarluaskan materi tanpa izin resmi.'),
+                _buildLegalPoint('3. Pembelian & Akses', 'Akses paket belajar, tryout, dan live class aktif secara otomatis setelah pembayaran terverifikasi melalui sistem Midtrans.'),
+                _buildLegalPoint('4. Integritas Belajar & Ujian', 'Peserta tryout dan olimpiade diharapkan menjunjung tinggi kejujuran akademik saat mengerjakan ujian online.'),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryBlue,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Saya Mengerti', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPrivacyDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: const [
+            Icon(Icons.privacy_tip_outlined, color: AppTheme.accentGreen, size: 24),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Kebijakan Privasi',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            physics: const ClampingScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Klinik Pendidikan MIPA (KPM) berkomitmen menjaga keamanan data pribadi seluruh siswa dan orang tua:',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _buildLegalPoint('1. Pengumpulan Data', 'Kami hanya mengumpulkan data yang diperlukan seperti nama, jenjang kelas, asal sekolah, alamat email, dan riwayat belajar/tryout.'),
+                _buildLegalPoint('2. Penggunaan Informasi', 'Data digunakan untuk personalisasi materi belajar, penerbitan sertifikat/peringkat olimpiade, dan pengiriman notifikasi pengingat.'),
+                _buildLegalPoint('3. Keamanan Data', 'Kata sandi Anda dienkripsi dengan standar industri (Hash bcrypt) dan kami tidak pernah menjual data siswa kepada pihak ketiga manapun.'),
+                _buildLegalPoint('4. Hak Privasi Anda', 'Anda dapat memperbarui profil atau meminta penghapusan akun sewaktu-waktu melalui Pusat Bantuan KPM.'),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.accentGreen,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Tutup', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLegalPoint(String title, String description) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.primaryBlue),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            description,
+            style: const TextStyle(fontSize: 12, height: 1.35),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _pickReminderTime() async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
@@ -476,14 +608,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Icons.description_outlined,
               'Syarat & Ketentuan',
               'Aturan penggunaan & lisensi KPM Academy',
-              () {},
+              _showTermsDialog,
             ),
             _settingsTile(
               context,
               Icons.privacy_tip_outlined,
               'Kebijakan Privasi',
               'Perlindungan data dan kerahasiaan siswa',
-              () {},
+              _showPrivacyDialog,
             ),
           ]),
           const SizedBox(height: 24),

@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatter.dart';
+import '../../models/banner_model.dart';
 import '../../models/package_model.dart';
 import '../../models/video_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/package_provider.dart';
 import '../../providers/practice_provider.dart';
+import '../../services/dashboard_service.dart';
 import '../../services/video_service.dart';
 import '../../widgets/auth_guard_bottom_sheet.dart';
 import '../../widgets/custom_alert_dialog.dart';
@@ -26,6 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Timer? _autoSlideTimer;
   List<VideoModel> _recentVideos = [];
   bool _isLoadingVideos = false;
+  List<BannerModel> _banners = DashboardService.getDefaultBanners();
 
   // 8 Menu Actions matched exactly with user's design reference
   static const List<Map<String, dynamic>> _quickActions = [
@@ -66,7 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
       'icon': Icons.receipt_long_rounded,
       'bgColor': Color(0xFFFFEDD5),
       'iconColor': Color(0xFFEA580C),
-      'route': '/cart',
+      'route': '/order_history',
       'protected': true,
     },
     {
@@ -74,7 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
       'icon': Icons.live_tv_rounded,
       'bgColor': Color(0xFFFCE7F3),
       'iconColor': Color(0xFFDB2777),
-      'route': '/video_list',
+      'route': '/live_class',
       'protected': false,
     },
     {
@@ -95,42 +98,27 @@ class _HomeScreenState extends State<HomeScreen> {
     },
   ];
 
-  static const List<Map<String, dynamic>> _banners = [
-    {
-      'tag': 'VIDEO MATERI',
-      'subTag': 'Akses Fleksibel',
-      'title': 'Video Pembelajaran Interaktif',
-      'sub': 'Pelajari konsep materi dari dasar hingga mahir kapan saja dan di mana saja',
-      'imageUrl': 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=900&auto=format&fit=crop&q=80',
-      'fallbackGradient': AppTheme.ruangguruGradient,
-      'route': '/video_list',
-    },
-    {
-      'tag': 'TRYOUT CBT',
-      'subTag': 'Sistem Skor IRT',
-      'title': 'Simulasi Ujian & Tryout CBT',
-      'sub': 'Asah kemampuan dengan ribuan bank soal dan pembahasan lengkap',
-      'imageUrl': 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=900&auto=format&fit=crop&q=80',
-      'fallbackGradient': AppTheme.purpleGradient,
-      'route': '/package_list',
-    },
-    {
-      'tag': 'PAKET UNGGULAN',
-      'subTag': 'Diskon 50%',
-      'title': 'Paket Intensif MIPA KPM',
-      'sub': 'Kuasai konsep Matematika Nalaria & Sains bersama Master Tutor',
-      'imageUrl': 'https://images.unsplash.com/photo-1509228468518-180dd4864904?w=900&auto=format&fit=crop&q=80',
-      'fallbackGradient': AppTheme.orangeGradient,
-      'route': '/package_list',
-    },
-  ];
+
 
   @override
   void initState() {
     super.initState();
     _bannerController = PageController(initialPage: 0);
     _startAutoSlider();
+    _loadBanners();
     _loadVideos();
+  }
+
+  void _loadBanners() async {
+    try {
+      final dashboardService = Provider.of<DashboardService>(context, listen: false);
+      final list = await dashboardService.getBanners();
+      if (mounted && list.isNotEmpty) {
+        setState(() {
+          _banners = list;
+        });
+      }
+    } catch (_) {}
   }
 
   void _loadVideos() async {
@@ -392,10 +380,14 @@ class _HomeScreenState extends State<HomeScreen> {
             onPageChanged: (idx) => _bannerPageNotifier.value = idx,
             itemBuilder: (context, index) {
               final banner = _banners[index];
-              final String imageUrl = banner['imageUrl'] as String;
+              final String imageUrl = banner.imageUrl;
 
               return GestureDetector(
-                onTap: () => Navigator.pushNamed(context, banner['route'] as String),
+                onTap: () {
+                  if (banner.route != null && banner.route!.isNotEmpty) {
+                    Navigator.pushNamed(context, banner.route!);
+                  }
+                },
                 child: Container(
                   margin: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
@@ -414,16 +406,20 @@ class _HomeScreenState extends State<HomeScreen> {
                       fit: StackFit.expand,
                       children: [
                         // Background Image
-                        CachedNetworkImage(
-                          imageUrl: imageUrl,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(
-                            decoration: BoxDecoration(gradient: banner['fallbackGradient'] as LinearGradient),
-                          ),
-                          errorWidget: (context, url, error) => Container(
-                            decoration: BoxDecoration(gradient: banner['fallbackGradient'] as LinearGradient),
-                          ),
-                        ),
+                        if (imageUrl.isNotEmpty)
+                          CachedNetworkImage(
+                            imageUrl: imageUrl,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(
+                              decoration: const BoxDecoration(gradient: AppTheme.blueGradient),
+                            ),
+                            errorWidget: (context, url, error) => Container(
+                              decoration: const BoxDecoration(gradient: AppTheme.blueGradient),
+                            ),
+                          )
+                        else
+                          Container(decoration: const BoxDecoration(gradient: AppTheme.blueGradient)),
+
                         // Translucent Gradient Overlay for optimal photo vibrancy
                         Container(
                           decoration: BoxDecoration(
@@ -457,7 +453,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 0.8),
                                     ),
                                     child: Text(
-                                      banner['tag'] as String,
+                                      banner.tag,
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 10,
@@ -467,7 +463,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ),
                                   Text(
-                                    banner['subTag'] as String,
+                                    banner.subTag,
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 11,
@@ -481,7 +477,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    banner['title'] as String,
+                                    banner.title,
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 15,
@@ -492,7 +488,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                   const SizedBox(height: 3),
                                   Text(
-                                    banner['sub'] as String,
+                                    banner.subtitle,
                                     style: const TextStyle(
                                       color: Colors.white70,
                                       fontSize: 11,
