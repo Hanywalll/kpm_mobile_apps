@@ -8,7 +8,7 @@ class LocalNotificationService {
   static bool _isInitialized = false;
 
   // Fresh channel ID with maximum priority to bypass any cached/blocked channel settings
-  static const String _channelId = 'kpm_study_channel_v4';
+  static const String _channelId = 'kpm_study_channel_v5';
   static const String _channelName = 'Pengingat Belajar KPM Academy';
   static const String _channelDesc = 'Notifikasi jadwal belajar harian, simulasi ujian online, dan kelas live KPM Academy';
   static const int studyReminderBaseId = 990;
@@ -110,7 +110,7 @@ class LocalNotificationService {
     }
   }
 
-  /// Common Android notification details with verified @mipmap/ic_notification and @mipmap/ic_launcher
+  /// Common Android notification details with verified pure white @mipmap/ic_notification
   static AndroidNotificationDetails _buildAndroidDetails() {
     return const AndroidNotificationDetails(
       _channelId,
@@ -121,7 +121,6 @@ class LocalNotificationService {
       playSound: true,
       enableVibration: true,
       icon: '@mipmap/ic_notification',
-      largeIcon: DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
       color: Color(0xFF1D4ED8), // KPM Blue branding circle
       styleInformation: BigTextStyleInformation(''),
     );
