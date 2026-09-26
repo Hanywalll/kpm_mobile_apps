@@ -2,9 +2,12 @@
 <!-- KPM Academy Native Launch Window Background for Android 21+ with centered HD Logo -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@color/splash_color" />
-    <item>
+    <item
+        android:width="120dp"
+        android:height="120dp"
+        android:gravity="center">
         <bitmap
-            android:gravity="center"
-            android:src="@mipmap/ic_launcher" />
+            android:gravity="fill"
+            android:src="@drawable/splash_logo" />
     </item>
 </layer-list>
