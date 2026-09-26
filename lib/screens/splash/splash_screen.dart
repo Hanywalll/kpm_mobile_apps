@@ -20,7 +20,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     super.initState();
     _animController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 650),
     );
 
     _scaleAnimation = CurvedAnimation(
@@ -35,7 +35,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
     _animController.forward();
 
-    _redirectTimer = Timer(const Duration(milliseconds: 1400), () {
+    _redirectTimer = Timer(const Duration(milliseconds: 850), () {
       if (mounted) {
         Navigator.pushReplacementNamed(context, '/home');
       }

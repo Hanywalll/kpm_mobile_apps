@@ -103,6 +103,13 @@ class NotificationService extends ChangeNotifier {
     } catch (_) {}
   }
 
+  /// Clear / delete ALL notifications
+  Future<void> clearAllNotifications() async {
+    _items = [];
+    await _saveLocalNotifications([]);
+    notifyListeners();
+  }
+
   // --- Private Local Storage Helpers ---
 
   Future<List<NotificationModel>> _loadLocalNotifications() async {

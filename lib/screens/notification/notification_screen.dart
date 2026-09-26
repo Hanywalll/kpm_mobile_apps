@@ -107,6 +107,43 @@ class _NotificationScreenState extends State<NotificationScreen> {
               }
             },
           ),
+          IconButton(
+            icon: const Icon(Icons.delete_sweep_outlined),
+            tooltip: 'Bersihkan Notifikasi',
+            onPressed: () async {
+              if (_notifications.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Daftar notifikasi sudah kosong.'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+                return;
+              }
+
+              final confirmed = await CustomAlertDialog.show(
+                context,
+                title: 'Bersihkan Notifikasi?',
+                message: 'Apakah Anda yakin ingin menghapus semua riwayat notifikasi? Tindakan ini tidak dapat dibatalkan.',
+                confirmText: 'Bersihkan',
+                cancelText: 'Batal',
+                isDanger: true,
+              );
+
+              if (confirmed == true && mounted) {
+                await notifService.clearAllNotifications();
+                _loadNotifications();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Semua riwayat notifikasi berhasil dibersihkan 🗑️'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              }
+            },
+          ),
         ],
       ),
       body: Column(
