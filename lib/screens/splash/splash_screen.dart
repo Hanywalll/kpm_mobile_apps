@@ -20,12 +20,12 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     super.initState();
     _animController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 900),
     );
 
     _scaleAnimation = CurvedAnimation(
       parent: _animController,
-      curve: Curves.easeOutCubic,
+      curve: Curves.easeOutBack,
     );
 
     _fadeAnimation = CurvedAnimation(
@@ -35,7 +35,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
     _animController.forward();
 
-    _redirectTimer = Timer(const Duration(milliseconds: 1200), () {
+    _redirectTimer = Timer(const Duration(milliseconds: 1400), () {
       if (mounted) {
         Navigator.pushReplacementNamed(context, '/home');
       }
@@ -62,39 +62,56 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
             children: [
               const Spacer(flex: 3),
 
-              // Animated KPM Academy Logo & Icon
+              // Animated Ultra-HD KPM Academy Logo
               ScaleTransition(
                 scale: _scaleAnimation,
                 child: FadeTransition(
                   opacity: _fadeAnimation,
                   child: Container(
-                    width: 96,
-                    height: 96,
+                    width: 108,
+                    height: 108,
                     decoration: BoxDecoration(
-                      gradient: AppTheme.blueGradient,
                       borderRadius: BorderRadius.circular(28),
                       boxShadow: [
                         BoxShadow(
                           color: AppTheme.primaryBlue.withValues(alpha: 0.35),
-                          blurRadius: 24,
-                          offset: const Offset(0, 10),
+                          blurRadius: 28,
+                          offset: const Offset(0, 12),
                         ),
                       ],
                     ),
-                    child: const Center(
-                      child: Icon(
-                        Icons.school_rounded,
-                        size: 52,
-                        color: Colors.white,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(28),
+                      child: Image.asset(
+                        'assets/images/kpm_logo_hd.png',
+                        width: 108,
+                        height: 108,
+                        fit: BoxFit.cover,
+                        filterQuality: FilterQuality.high,
+                        errorBuilder: (context, error, stackTrace) {
+                          // Clean vector fallback
+                          return Container(
+                            decoration: const BoxDecoration(
+                              gradient: AppTheme.blueGradient,
+                            ),
+                            child: const Center(
+                              child: Icon(
+                                Icons.school_rounded,
+                                size: 58,
+                                color: Colors.white,
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ),
                 ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 26),
 
-              // Title Branding
+              // Title Branding: KPM Academy
               FadeTransition(
                 opacity: _fadeAnimation,
                 child: Column(
@@ -102,19 +119,21 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     Text(
                       'KPM ACADEMY',
                       style: TextStyle(
-                        fontSize: 22,
+                        fontSize: 24,
                         fontWeight: FontWeight.w900,
-                        letterSpacing: 1.2,
-                        color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                        letterSpacing: 1.5,
+                        color: isDark ? Colors.white : AppTheme.primaryBlueDark,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 8),
                     Text(
-                      'Pusat Pembelajaran Sains & Matematika',
+                      'Pusat Pembelajaran Sains & Matematika Nalaria',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 13,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
                         color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
+                        letterSpacing: 0.2,
                       ),
                     ),
                   ],
