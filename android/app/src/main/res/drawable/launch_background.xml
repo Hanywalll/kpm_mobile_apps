@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Plain solid background for instant launch before custom Flutter SplashScreen -->
+<!-- Native Android Launch Window Splash Screen with centered HD KPM Logo -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@color/splash_color" />
+    <item
+        android:width="120dp"
+        android:height="120dp"
+        android:gravity="center">
+        <bitmap
+            android:gravity="fill"
+            android:src="@drawable/splash_logo" />
+    </item>
 </layer-list>

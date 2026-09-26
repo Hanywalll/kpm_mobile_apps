@@ -19,6 +19,6 @@ void main() {
 
     // Cleanly unmount before navigating to HomeScreen to avoid network timers in smoke test
     await tester.pumpWidget(const SizedBox());
-    await tester.pump();
+    await tester.pump(const Duration(seconds: 10));
   });
 }

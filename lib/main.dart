@@ -95,7 +95,7 @@ class KPMApp extends StatelessWidget {
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: themeProvider.themeMode,
-            initialRoute: '/splash',
+            initialRoute: '/home',
             routes: {
               '/splash': (context) => const SplashScreen(),
               '/login': (context) => const LoginScreen(),
