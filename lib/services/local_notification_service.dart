@@ -7,7 +7,8 @@ class LocalNotificationService {
   static final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
   static bool _isInitialized = false;
 
-  static const String _channelId = 'kpm_study_reminder_channel_v1';
+  // Fresh channel ID with maximum priority to bypass any cached/blocked channel settings
+  static const String _channelId = 'kpm_study_channel_v3';
   static const String _channelName = 'Pengingat Belajar KPM Academy';
   static const String _channelDesc = 'Notifikasi jadwal belajar harian, simulasi ujian online, dan kelas live KPM Academy';
   static const int studyReminderBaseId = 990;
@@ -20,7 +21,7 @@ class LocalNotificationService {
       tz.initializeTimeZones();
       _setupLocalTimezone();
 
-      const AndroidInitializationSettings androidSettings = AndroidInitializationSettings('@drawable/ic_notification');
+      const AndroidInitializationSettings androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
       const DarwinInitializationSettings iosSettings = DarwinInitializationSettings(
         requestAlertPermission: true,
         requestBadgePermission: true,
@@ -109,7 +110,7 @@ class LocalNotificationService {
     }
   }
 
-  /// Common Android notification details with clean white small icon & full KPM logo large icon
+  /// Common Android notification details with verified @mipmap/ic_launcher
   static AndroidNotificationDetails _buildAndroidDetails() {
     return const AndroidNotificationDetails(
       _channelId,
@@ -119,7 +120,7 @@ class LocalNotificationService {
       priority: Priority.high,
       playSound: true,
       enableVibration: true,
-      icon: '@drawable/ic_notification',
+      icon: '@mipmap/ic_launcher',
       largeIcon: DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
       color: Color(0xFF1D4ED8), // KPM Blue branding
       styleInformation: BigTextStyleInformation(''),
@@ -134,6 +135,7 @@ class LocalNotificationService {
     String? payload,
   }) async {
     await init();
+    await requestPermission();
 
     final AndroidNotificationDetails androidDetails = _buildAndroidDetails();
 
@@ -144,6 +146,7 @@ class LocalNotificationService {
 
     try {
       await _plugin.show(id, title, body, details, payload: payload);
+      debugPrint('LocalNotificationService: Notification shown successfully with ID $id');
     } catch (e) {
       debugPrint('Failed to show notification: $e');
     }
@@ -152,6 +155,7 @@ class LocalNotificationService {
   /// Schedule multiple daily study reminders (up to 5 times a day)
   static Future<void> scheduleMultipleDailyStudyReminders(List<TimeOfDay> times) async {
     await init();
+    await requestPermission();
     await cancelAllStudyReminders();
 
     final AndroidNotificationDetails androidDetails = _buildAndroidDetails();
