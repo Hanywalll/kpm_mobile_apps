@@ -14,6 +14,7 @@ import '../../services/dashboard_service.dart';
 import '../../services/video_service.dart';
 import '../../widgets/auth_guard_bottom_sheet.dart';
 import '../../widgets/custom_alert_dialog.dart';
+import '../../widgets/permission_request_dialog.dart';
 import '../../widgets/promo_poster_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -108,13 +109,20 @@ class _HomeScreenState extends State<HomeScreen> {
     _startAutoSlider();
     _loadBanners();
     _loadVideos();
-    _checkAndShowPromoPoster();
+    _checkAndShowDialogs();
   }
 
-  void _checkAndShowPromoPoster() {
+  void _checkAndShowDialogs() {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final shouldShow = await PromoPosterDialog.shouldShowPromo();
-      if (shouldShow && mounted) {
+      // 1. Show standard app permission request dialog on first launch
+      final shouldShowPermission = await PermissionRequestDialog.shouldShowDialog();
+      if (shouldShowPermission && mounted) {
+        await PermissionRequestDialog.show(context);
+      }
+
+      // 2. Show promo poster popup if 2 hours have passed
+      final shouldShowPromo = await PromoPosterDialog.shouldShowPromo();
+      if (shouldShowPromo && mounted) {
         final promoBanner = _banners.isNotEmpty ? _banners.first : null;
         PromoPosterDialog.show(
           context,

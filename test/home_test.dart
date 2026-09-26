@@ -33,7 +33,10 @@ void main() {
 
   setUp(() {
     FlutterSecureStorage.setMockInitialValues({});
-    SharedPreferences.setMockInitialValues({});
+    SharedPreferences.setMockInitialValues({
+      'kpm_permission_prompt_completed': true,
+      'kpm_promo_poster_last_shown_time': DateTime.now().toIso8601String(),
+    });
   });
 
   testWidgets('Test HomeScreen rendering', (WidgetTester tester) async {
