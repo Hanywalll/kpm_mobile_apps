@@ -13,7 +13,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController(text: 'siswa@kpm.com');
-  final _passwordController = TextEditingController(text: '123456');
+  final _passwordController = TextEditingController(text: 'Password123!');
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
 
@@ -164,28 +164,65 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppTheme.accentYellow.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: Colors.amber.shade300),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(Icons.stars_rounded, color: Colors.amber, size: 24),
-                              SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  'Akun Demo Siap Pakai:\nEmail: siswa@kpm.com | Pass: 123456',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppTheme.textPrimary,
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _emailController.text = 'siswa@kpm.com';
+                              _passwordController.text = 'Password123!';
+                            });
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Akun Siswa Demo diterapkan! Siap masuk.'),
+                                backgroundColor: AppTheme.primaryBlue,
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryBlue.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: AppTheme.primaryBlue.withValues(alpha: 0.3)),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.primaryBlue.withValues(alpha: 0.15),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.verified_user_rounded, color: AppTheme.primaryBlue, size: 20),
+                                ),
+                                const SizedBox(width: 10),
+                                const Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Akun Demo Siap Pakai (Database Aktif):',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppTheme.primaryBlue,
+                                        ),
+                                      ),
+                                      SizedBox(height: 2),
+                                      Text(
+                                        'Email: siswa@kpm.com | Pass: Password123!',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppTheme.textPrimary,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ),
-                            ],
+                                const Icon(Icons.touch_app_rounded, size: 18, color: AppTheme.primaryBlue),
+                              ],
+                            ),
                           ),
                         ),
                         const SizedBox(height: 18),

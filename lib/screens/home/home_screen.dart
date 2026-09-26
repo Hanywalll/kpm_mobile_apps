@@ -304,47 +304,82 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Row(
         children: [
-          // Profile Avatar
-          GestureDetector(
-            onTap: () {
-              if (isLoggedIn) {
-                Navigator.pushNamed(context, '/profile');
-              } else {
-                Navigator.pushNamed(context, '/login');
-              }
-            },
-            child: CircleAvatar(
-              radius: 20,
-              backgroundColor: AppTheme.primaryBlue,
-              child: Text(
-                initialChar,
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
+          // Profile Avatar & Name (or Masuk / Daftar button)
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isLoggedIn ? 'Halo, ${fullName ?? "Siswa KPM"} 👋' : 'Selamat Datang di KPM 👋',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                if (isLoggedIn) {
+                  Navigator.pushNamed(context, '/profile');
+                } else {
+                  Navigator.pushNamed(context, '/login');
+                }
+              },
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundColor: isLoggedIn ? AppTheme.primaryBlue : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                    child: isLoggedIn
+                        ? Text(
+                            initialChar,
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                          )
+                        : const Icon(Icons.person_outline_rounded, color: AppTheme.primaryBlue, size: 22),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  'Mau belajar apa hari ini?',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (isLoggedIn) ...[
+                          Text(
+                            'Halo, ${fullName ?? "Siswa KPM"} 👋',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            'Mau belajar apa hari ini?',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
+                            ),
+                          ),
+                        ] else ...[
+                          Row(
+                            children: [
+                              Text(
+                                'Masuk / Daftar',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppTheme.primaryBlue,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              const Icon(Icons.arrow_forward_ios_rounded, size: 11, color: AppTheme.primaryBlue),
+                            ],
+                          ),
+                          Text(
+                            'Klik untuk simpan progres & tryout CBT',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           // Cart Button with badge
