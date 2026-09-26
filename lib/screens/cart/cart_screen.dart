@@ -73,36 +73,59 @@ class _CartScreenState extends State<CartScreen> {
         title: const Text('Keranjang Belajar'),
         actions: [
           if (cartItems.isNotEmpty)
-            TextButton(
+            IconButton(
+              tooltip: 'Kosongkan Keranjang',
+              icon: const Icon(Icons.delete_sweep_rounded, color: Colors.redAccent, size: 22),
               onPressed: () {
                 showDialog(
                   context: context,
                   builder: (ctx) => AlertDialog(
-                    title: const Text('Kosongkan Keranjang?'),
-                    content: const Text('Semua paket yang telah dipilih akan dihapus dari keranjang.'),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    title: Row(
+                      children: const [
+                        Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 24),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Kosongkan Keranjang?',
+                            style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                    content: const Text(
+                      'Apakah kamu yakin ingin menghapus semua paket belajar yang ada di dalam keranjang?',
+                      style: TextStyle(fontSize: 13, color: AppTheme.textSecondary, height: 1.4),
+                    ),
+                    actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     actions: [
-                      TextButton(
+                      OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        ),
                         onPressed: () => Navigator.pop(ctx),
-                        child: const Text('Batal'),
+                        child: const Text('Batal', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
                       ),
-                      TextButton(
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.redAccent,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        ),
                         onPressed: () {
                           packageProvider.clearCart();
                           Navigator.pop(ctx);
                         },
-                        style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
-                        child: const Text('Hapus Semua'),
+                        child: const Text('Ya, Kosongkan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                       ),
                     ],
                   ),
                 );
               },
-              child: const Text(
-                'Kosongkan',
-                style: TextStyle(color: Colors.redAccent, fontSize: 13, fontWeight: FontWeight.bold),
-              ),
             ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
         ],
       ),
       body: cartItems.isEmpty
@@ -299,22 +322,23 @@ class _CartScreenState extends State<CartScreen> {
                   ),
                 ),
 
-                // Bottom Sticky Action Bar
+                // Bottom Sticky Action Bar (Compact & Sleek)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     color: isDark ? AppTheme.darkCardColor : Colors.white,
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.08),
-                        blurRadius: 15,
-                        offset: const Offset(0, -4),
+                        color: Colors.black.withValues(alpha: 0.06),
+                        blurRadius: 12,
+                        offset: const Offset(0, -3),
                       ),
                     ],
                   ),
                   child: SafeArea(
                     child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -324,56 +348,47 @@ class _CartScreenState extends State<CartScreen> {
                               'Total Pembayaran',
                               style: TextStyle(fontSize: 11, color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary),
                             ),
+                            const SizedBox(height: 2),
                             Text(
                               Formatter.currency(finalTotal),
                               style: const TextStyle(
-                                fontSize: 18,
+                                fontSize: 17,
                                 fontWeight: FontWeight.w900,
                                 color: AppTheme.primaryBlue,
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(width: 20),
-                        Expanded(
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primaryBlue,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              elevation: 2,
-                            ),
-                            onPressed: () {
-                              AuthGuard.check(
-                                context,
-                                featureName: 'Checkout Keranjang Belajar',
-                                onAuthenticated: () {
-                                  // Pass the first or combined item to checkout
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => CheckoutScreen(
-                                        cartPackage: cartItems.first,
-                                        customTotal: finalTotal,
-                                        cartItems: cartItems,
-                                      ),
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryBlue,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                            elevation: 1,
+                          ),
+                          onPressed: () {
+                            AuthGuard.check(
+                              context,
+                              featureName: 'Checkout Keranjang Belajar',
+                              onAuthenticated: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => CheckoutScreen(
+                                      cartPackage: cartItems.first,
+                                      customTotal: finalTotal,
+                                      cartItems: cartItems,
                                     ),
-                                  );
-                                },
-                              );
-                            },
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.shopping_bag_rounded, size: 18),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Checkout (${cartItems.length}) ➔',
-                                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
-                                ),
-                              ],
-                            ),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                          icon: const Icon(Icons.shopping_bag_outlined, size: 16),
+                          label: Text(
+                            'Checkout (${cartItems.length}) ➔',
+                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
                           ),
                         ),
                       ],
