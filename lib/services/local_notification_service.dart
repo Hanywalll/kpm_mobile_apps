@@ -18,8 +18,9 @@ class LocalNotificationService {
 
     try {
       tz.initializeTimeZones();
+      _setupLocalTimezone();
 
-      const AndroidInitializationSettings androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const AndroidInitializationSettings androidSettings = AndroidInitializationSettings('@drawable/ic_notification');
       const DarwinInitializationSettings iosSettings = DarwinInitializationSettings(
         requestAlertPermission: true,
         requestBadgePermission: true,
@@ -54,11 +55,40 @@ class LocalNotificationService {
         );
         // Request runtime permission for Android 13+
         await androidPlugin.requestNotificationsPermission();
+        try {
+          await androidPlugin.requestExactAlarmsPermission();
+        } catch (_) {}
       }
 
       _isInitialized = true;
     } catch (e) {
       debugPrint('Error initializing LocalNotificationService: $e');
+    }
+  }
+
+  /// Setup the local timezone properly according to device offset (WIB, WITA, WIT, or international)
+  static void _setupLocalTimezone() {
+    try {
+      final offsetInHours = DateTime.now().timeZoneOffset.inHours;
+      String locationName = 'Asia/Jakarta';
+      if (offsetInHours == 8) {
+        locationName = 'Asia/Makassar';
+      } else if (offsetInHours == 9) {
+        locationName = 'Asia/Jayapura';
+      } else if (offsetInHours == 7) {
+        locationName = 'Asia/Jakarta';
+      } else {
+        final matching = tz.timeZoneDatabase.locations.values.firstWhere(
+          (loc) => loc.currentTimeZone.offset == DateTime.now().timeZoneOffset.inMilliseconds,
+          orElse: () => tz.getLocation('Asia/Jakarta'),
+        );
+        locationName = matching.name;
+      }
+      tz.setLocalLocation(tz.getLocation(locationName));
+    } catch (_) {
+      try {
+        tz.setLocalLocation(tz.getLocation('Asia/Jakarta'));
+      } catch (_) {}
     }
   }
 
@@ -68,12 +98,32 @@ class LocalNotificationService {
       final androidPlugin = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
       if (androidPlugin != null) {
         final granted = await androidPlugin.requestNotificationsPermission();
+        try {
+          await androidPlugin.requestExactAlarmsPermission();
+        } catch (_) {}
         return granted ?? true;
       }
       return true;
     } catch (_) {
       return true;
     }
+  }
+
+  /// Common Android notification details with clean white small icon & full KPM logo large icon
+  static AndroidNotificationDetails _buildAndroidDetails() {
+    return const AndroidNotificationDetails(
+      _channelId,
+      _channelName,
+      channelDescription: _channelDesc,
+      importance: Importance.max,
+      priority: Priority.high,
+      playSound: true,
+      enableVibration: true,
+      icon: '@drawable/ic_notification',
+      largeIcon: DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+      color: Color(0xFF1D4ED8), // KPM Blue branding
+      styleInformation: BigTextStyleInformation(''),
+    );
   }
 
   /// Show an instant system tray notification immediately
@@ -85,22 +135,11 @@ class LocalNotificationService {
   }) async {
     await init();
 
-    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-      _channelId,
-      _channelName,
-      channelDescription: _channelDesc,
-      importance: Importance.max,
-      priority: Priority.high,
-      playSound: true,
-      enableVibration: true,
-      styleInformation: BigTextStyleInformation(''),
-      icon: '@mipmap/ic_launcher',
-      color: Color(0xFF1E40AF), // Deep Blue KPM Academy
-    );
+    final AndroidNotificationDetails androidDetails = _buildAndroidDetails();
 
-    const NotificationDetails details = NotificationDetails(
+    final NotificationDetails details = NotificationDetails(
       android: androidDetails,
-      iOS: DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: true),
+      iOS: const DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: true),
     );
 
     try {
@@ -115,6 +154,13 @@ class LocalNotificationService {
     await init();
     await cancelAllStudyReminders();
 
+    final AndroidNotificationDetails androidDetails = _buildAndroidDetails();
+
+    final NotificationDetails details = NotificationDetails(
+      android: androidDetails,
+      iOS: const DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: true),
+    );
+
     for (int i = 0; i < times.length && i < 5; i++) {
       final time = times[i];
       final notificationId = studyReminderBaseId + i;
@@ -122,25 +168,8 @@ class LocalNotificationService {
       final title = _getMotivationalTitle(time.hour);
       final body = _getMotivationalBody(time.hour);
 
-      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-        _channelId,
-        _channelName,
-        channelDescription: _channelDesc,
-        importance: Importance.max,
-        priority: Priority.high,
-        playSound: true,
-        enableVibration: true,
-        styleInformation: BigTextStyleInformation(''),
-        icon: '@mipmap/ic_launcher',
-        color: Color(0xFF1E40AF),
-      );
-
-      const NotificationDetails details = NotificationDetails(
-        android: androidDetails,
-        iOS: DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: true),
-      );
-
       try {
+        _setupLocalTimezone();
         final now = tz.TZDateTime.now(tz.local);
         var scheduledDate = tz.TZDateTime(
           tz.local,
@@ -165,9 +194,31 @@ class LocalNotificationService {
           uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
           matchDateTimeComponents: DateTimeComponents.time,
         );
-      } catch (_) {
+      } catch (e) {
+        debugPrint('zonedSchedule with exactAllowWhileIdle failed: $e, falling back to inexactAllowWhileIdle');
         try {
-          await _plugin.show(notificationId, title, body, details);
+          final now = tz.TZDateTime.now(tz.local);
+          var scheduledDate = tz.TZDateTime(
+            tz.local,
+            now.year,
+            now.month,
+            now.day,
+            time.hour,
+            time.minute,
+          );
+          if (scheduledDate.isBefore(now)) {
+            scheduledDate = scheduledDate.add(const Duration(days: 1));
+          }
+          await _plugin.zonedSchedule(
+            notificationId,
+            title,
+            body,
+            scheduledDate,
+            details,
+            androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+            uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+            matchDateTimeComponents: DateTimeComponents.time,
+          );
         } catch (_) {}
       }
     }
@@ -191,7 +242,7 @@ class LocalNotificationService {
 
   static String _getMotivationalTitle(int hour) {
     if (hour < 11) {
-      return '🌅 Semangat Belajar Pagi di KPM Academy!';
+      return '⏰ Waktunya Belajar Pagi di KPM Academy!';
     } else if (hour < 15) {
       return '☀️ Waktu Belajar Siang: Asah Logika MNR!';
     } else if (hour < 18) {

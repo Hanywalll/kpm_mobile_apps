@@ -79,12 +79,12 @@ class KPMApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider(authService)..initAuth()),
         ChangeNotifierProvider(create: (_) => PackageProvider(packageService)..fetchPackages()),
+        ChangeNotifierProvider(create: (_) => notificationService..getNotifications()),
         ChangeNotifierProvider(create: (_) => PracticeProvider(practiceService)),
         Provider.value(value: packageService),
         Provider.value(value: videoService),
         Provider.value(value: aiService),
         Provider.value(value: dashboardService),
-        Provider.value(value: notificationService),
         Provider.value(value: supportService),
       ],
       child: Consumer<ThemeProvider>(

@@ -63,7 +63,7 @@ void main() {
           Provider<VideoService>.value(value: videoService),
           Provider.value(value: aiService),
           Provider.value(value: dashboardService),
-          Provider.value(value: notificationService),
+          ChangeNotifierProvider.value(value: notificationService),
           Provider.value(value: supportService),
         ],
         child: MaterialApp(

@@ -1,18 +1,28 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/api/api_client.dart';
 import '../core/api/api_endpoints.dart';
 import '../models/notification_model.dart';
 
-class NotificationService {
+class NotificationService extends ChangeNotifier {
   final ApiClient _apiClient;
   static const String _storageKey = 'kpm_app_notifications_v2';
+  List<NotificationModel> _items = [];
+  bool _isLoading = false;
 
   NotificationService(this._apiClient);
 
+  List<NotificationModel> get notifications => _items;
+  bool get isLoading => _isLoading;
+  int get unreadCount => _items.where((n) => !n.isRead).length;
+
   /// Fetch all notifications from local storage and backend, merging them seamlessly
   Future<List<NotificationModel>> getNotifications() async {
+    _isLoading = true;
+    notifyListeners();
+
     List<NotificationModel> localList = await _loadLocalNotifications();
 
     if (localList.isEmpty) {
@@ -34,13 +44,18 @@ class NotificationService {
       await _saveLocalNotifications(localList);
     } catch (_) {}
 
-    return localList;
+    _items = localList;
+    _isLoading = false;
+    notifyListeners();
+    return _items;
   }
 
   /// Get count of unread notifications
   Future<int> getUnreadCount() async {
-    final list = await getNotifications();
-    return list.where((n) => !n.isRead).length;
+    if (_items.isEmpty) {
+      await getNotifications();
+    }
+    return unreadCount;
   }
 
   /// Add a new notification (e.g. from study reminder or exam updates)
@@ -49,6 +64,8 @@ class NotificationService {
     list.removeWhere((item) => item.id == notification.id);
     list.insert(0, notification);
     await _saveLocalNotifications(list);
+    _items = list;
+    notifyListeners();
   }
 
   /// Mark a single notification as read
@@ -58,6 +75,8 @@ class NotificationService {
     if (index >= 0) {
       list[index] = list[index].copyWith(readAt: DateTime.now().toIso8601String());
       await _saveLocalNotifications(list);
+      _items = list;
+      notifyListeners();
     }
 
     try {
@@ -76,6 +95,8 @@ class NotificationService {
     }).toList();
 
     await _saveLocalNotifications(updatedList);
+    _items = updatedList;
+    notifyListeners();
 
     try {
       await _apiClient.dio.post(ApiEndpoints.markAllNotificationsRead);

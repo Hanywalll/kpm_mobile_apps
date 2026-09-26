@@ -94,7 +94,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (_) {}
   }
 
-  Future<void> _saveReminderTimes(List<TimeOfDay> times, {String? actionDescription}) async {
+  Future<void> _saveReminderTimes(List<TimeOfDay> times) async {
     setState(() => _reminderTimes = times);
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -103,22 +103,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       if (_studyReminder) {
         await LocalNotificationService.scheduleMultipleDailyStudyReminders(times);
-      }
-
-      // Record this reminder configuration to the Notification Screen
-      if (mounted) {
-        final notifService = Provider.of<NotificationService>(context, listen: false);
-        final formattedTimes = times.map((t) => '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}').join(', ');
-        await notifService.addNotification(
-          NotificationModel(
-            id: 'notif_reminder_${DateTime.now().millisecondsSinceEpoch}',
-            userId: 'user_local',
-            type: 'reminder',
-            title: '⏰ Pengingat Belajar Harian Diperbarui',
-            message: actionDescription ?? 'Jadwal pengingat belajar aktif untuk pukul $formattedTimes WIB.',
-            createdAt: DateTime.now().toIso8601String(),
-          ),
-        );
       }
     } catch (_) {}
   }
@@ -154,7 +138,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final updated = List<TimeOfDay>.from(_reminderTimes)..add(picked);
       // Sort times chronologically
       updated.sort((a, b) => (a.hour * 60 + a.minute).compareTo(b.hour * 60 + b.minute));
-      await _saveReminderTimes(updated, actionDescription: 'Jadwal pengingat baru ditambahkan untuk pukul ${picked.format(context)}.');
+      await _saveReminderTimes(updated);
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -190,7 +174,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final updated = List<TimeOfDay>.from(_reminderTimes);
       updated[index] = picked;
       updated.sort((a, b) => (a.hour * 60 + a.minute).compareTo(b.hour * 60 + b.minute));
-      await _saveReminderTimes(updated, actionDescription: 'Jadwal pengingat diubah ke pukul ${picked.format(context)}.');
+      await _saveReminderTimes(updated);
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -217,7 +201,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     final removed = _reminderTimes[index];
     final updated = List<TimeOfDay>.from(_reminderTimes)..removeAt(index);
-    await _saveReminderTimes(updated, actionDescription: 'Jadwal pengingat pukul ${removed.format(context)} dihapus.');
+    await _saveReminderTimes(updated);
     
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

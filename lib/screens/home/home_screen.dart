@@ -11,6 +11,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/package_provider.dart';
 import '../../providers/practice_provider.dart';
 import '../../services/dashboard_service.dart';
+import '../../services/notification_service.dart';
 import '../../services/video_service.dart';
 import '../../widgets/auth_guard_bottom_sheet.dart';
 import '../../widgets/custom_alert_dialog.dart';
@@ -425,11 +426,21 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             tooltip: 'Keranjang Belajar',
           ),
-          // Notification Button
-          IconButton(
-            onPressed: () => Navigator.pushNamed(context, '/notification'),
-            icon: Icon(Icons.notifications_outlined, color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary, size: 22),
-            tooltip: 'Notifikasi',
+          // Notification Button with unread indicator badge
+          Consumer<NotificationService>(
+            builder: (context, notifService, _) {
+              final unreadCount = notifService.unreadCount;
+              return IconButton(
+                onPressed: () => Navigator.pushNamed(context, '/notification'),
+                icon: Badge(
+                  isLabelVisible: unreadCount > 0,
+                  label: Text('$unreadCount'),
+                  backgroundColor: Colors.redAccent,
+                  child: Icon(Icons.notifications_outlined, color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary, size: 22),
+                ),
+                tooltip: 'Notifikasi',
+              );
+            },
           ),
         ],
       ),

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/notification_model.dart';
+import '../../services/local_notification_service.dart';
 import '../../services/notification_service.dart';
+import '../../widgets/custom_alert_dialog.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
@@ -35,27 +37,33 @@ class _NotificationScreenState extends State<NotificationScreen> {
     }
   }
 
-  void _simulateReminderNotification() {
+  void _simulateReminderNotification() async {
+    final notifService = Provider.of<NotificationService>(context, listen: false);
+    final now = DateTime.now();
     final newNotif = NotificationModel(
-      id: 'notif_sim_${DateTime.now().millisecondsSinceEpoch}',
+      id: 'notif_sim_${now.millisecondsSinceEpoch}',
       userId: 'user_local',
-      title: 'Pengingat Belajar KPM',
-      message: 'Waktunya menyelesaikan latihan soal Matematika Nalaria & Sains KPM hari ini!',
+      title: '⏰ Waktunya Belajar di KPM Academy!',
+      message: 'Ayo lanjutkan latihan penalaran Matematika Nalaria & Sains hari ini untuk raih prestasi terbaik!',
       type: 'reminder',
-      createdAt: DateTime.now().toIso8601String(),
+      createdAt: now.toIso8601String(),
     );
 
-    setState(() {
-      _notifications.insert(0, newNotif);
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Pengingat harian simulasi berhasil diterima! 🔔'),
-        backgroundColor: AppTheme.accentGreen,
-        behavior: SnackBarBehavior.floating,
-      ),
+    await notifService.addNotification(newNotif);
+    await LocalNotificationService.showInstantNotification(
+      title: newNotif.title,
+      body: newNotif.message,
     );
+    _loadNotifications();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Notifikasi pengingat belajar berhasil dikirim ke status bar! 🔔'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   @override
@@ -106,7 +114,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
           // Filter Tabs (Modern Minimalist Grey Tabs)
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
+            physics: const ClampingScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: _filters.map((filter) {
@@ -188,83 +196,102 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         onRefresh: () async => _loadNotifications(),
                         child: ListView.builder(
                           padding: const EdgeInsets.all(18),
-                          physics: const BouncingScrollPhysics(),
+                          physics: const ClampingScrollPhysics(),
                           itemCount: filteredList.length,
                           itemBuilder: (context, index) {
                             final n = filteredList[index];
                             final bool isReminder = n.type == 'reminder' || n.title.contains('Streak') || n.title.contains('Pengingat');
 
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              padding: const EdgeInsets.all(16),
-                              decoration: AppTheme.bentoBoxDecoration(context: context),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: isReminder
-                                          ? AppTheme.kpmGold.withValues(alpha: 0.15)
-                                          : AppTheme.primaryBlue.withValues(alpha: 0.12),
-                                      borderRadius: BorderRadius.circular(14),
-                                    ),
-                                    child: Icon(
-                                      isReminder ? Icons.local_fire_department_rounded : Icons.notifications_active_rounded,
-                                      color: isReminder ? AppTheme.kpmGold : AppTheme.primaryBlue,
-                                      size: 22,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 14),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            return Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(16),
+                                onTap: () async {
+                                  if (!n.isRead) {
+                                    await notifService.markRead(n.id);
+                                    _loadNotifications();
+                                  }
+                                  if (context.mounted) {
+                                    AppModal.showInfo(
+                                      context,
+                                      title: n.title,
+                                      message: n.message,
+                                    );
+                                  }
+                                },
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: AppTheme.bentoBoxDecoration(context: context),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: isReminder
+                                              ? AppTheme.kpmGold.withValues(alpha: 0.15)
+                                              : AppTheme.primaryBlue.withValues(alpha: 0.12),
+                                          borderRadius: BorderRadius.circular(14),
+                                        ),
+                                        child: Icon(
+                                          isReminder ? Icons.alarm_rounded : Icons.notifications_active_rounded,
+                                          color: isReminder ? AppTheme.kpmGold : AppTheme.primaryBlue,
+                                          size: 22,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 14),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            Expanded(
-                                              child: Text(
-                                                n.title,
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 14,
-                                                  color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    n.title,
+                                                    style: TextStyle(
+                                                      fontWeight: FontWeight.bold,
+                                                      fontSize: 14,
+                                                      color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                                                    ),
+                                                  ),
                                                 ),
+                                                if (!n.isRead)
+                                                  Container(
+                                                    width: 8,
+                                                    height: 8,
+                                                    decoration: const BoxDecoration(
+                                                      color: AppTheme.primaryBlue,
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              n.message,
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
+                                                height: 1.4,
                                               ),
                                             ),
-                                            if (!n.isRead)
-                                              Container(
-                                                width: 8,
-                                                height: 8,
-                                                decoration: const BoxDecoration(
-                                                  color: AppTheme.primaryBlue,
-                                                  shape: BoxShape.circle,
-                                                ),
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              n.createdAt.contains('T') ? n.createdAt.split('T').first : n.createdAt,
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: isDark ? AppTheme.darkTextMuted : AppTheme.textMuted,
                                               ),
+                                            ),
                                           ],
                                         ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          n.message,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
-                                            height: 1.4,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          n.createdAt.contains('T') ? n.createdAt.split('T').first : n.createdAt,
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            color: isDark ? AppTheme.darkTextMuted : AppTheme.textMuted,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                      ),
+                                    ],
                                   ),
-                                ],
+                                ),
                               ),
                             );
                           },
