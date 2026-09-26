@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Android 12+ (API 31+) Native Dark Mode Splash Screen Theme with unclipped HD KPM Logo -->
+    <!-- Keep splash background ALWAYS pure white (#FFFFFF) even in Dark Mode -->
     <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
-        <item name="android:windowSplashScreenBackground">@color/splash_night_color</item>
+        <item name="android:windowSplashScreenBackground">@color/splash_color</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_logo</item>
-        <item name="android:windowSplashScreenIconBackgroundColor">@color/splash_night_color</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/splash_color</item>
     </style>
     <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
-        <item name="android:windowBackground">@color/splash_night_color</item>
+        <item name="android:windowBackground">@color/splash_color</item>
     </style>
 </resources>

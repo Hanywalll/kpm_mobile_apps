@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Native Android Launch Window Splash Screen for Android 21+ with compact sharp HD KPM Logo -->
+<!-- Native Android Launch Window Splash Screen for Android 21+ with sleek 76dp HD KPM Logo -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@color/splash_color" />
     <item
-        android:width="92dp"
-        android:height="92dp"
+        android:width="76dp"
+        android:height="76dp"
         android:gravity="center">
         <bitmap
             android:gravity="fill"
