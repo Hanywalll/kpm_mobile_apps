@@ -1,15 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- KPM Academy Native Launch Splash Screen -->
+<!-- KPM Academy Native Launch Window Background -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@color/splash_color" />
-
-    <!-- Center KPM App Logo immediately on cold boot -->
-    <item
-        android:width="96dp"
-        android:height="96dp"
-        android:gravity="center">
-        <bitmap
-            android:gravity="fill"
-            android:src="@mipmap/ic_launcher" />
-    </item>
 </layer-list>
