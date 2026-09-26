@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../services/local_notification_service.dart';
 import '../../services/support_service.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -55,6 +56,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('kpm_settings_study_reminder', val);
+      if (val) {
+        await LocalNotificationService.scheduleDailyStudyReminder(
+          hour: _reminderTime.hour,
+          minute: _reminderTime.minute,
+        );
+      } else {
+        await LocalNotificationService.cancelStudyReminder();
+      }
     } catch (_) {}
   }
 
@@ -64,6 +73,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt('kpm_settings_reminder_hour', time.hour);
       await prefs.setInt('kpm_settings_reminder_minute', time.minute);
+      if (_studyReminder) {
+        await LocalNotificationService.scheduleDailyStudyReminder(
+          hour: time.hour,
+          minute: time.minute,
+        );
+      }
     } catch (_) {}
   }
 
@@ -616,6 +631,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
                 onTap: _pickReminderTime,
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.send_to_mobile_rounded, color: AppTheme.accentGreen),
+                title: Text(
+                  'Uji Coba Kirim Notifikasi 🔔',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                  ),
+                ),
+                subtitle: Text(
+                  'Kirim notifikasi langsung ke bilah status HP sekarang',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
+                  ),
+                ),
+                trailing: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accentGreen.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'Kirim 🚀',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: AppTheme.accentGreen),
+                  ),
+                ),
+                onTap: () async {
+                  await LocalNotificationService.showInstantNotification(
+                    title: 'Pengingat Belajar KPM Academy ⏰📚',
+                    body: 'Waktunya belajar! Ayo buka modul Matematika Nalaria & latihan soal CBT sekarang!',
+                  );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Notifikasi uji coba berhasil dikirim ke bilah status HP! 🔔'),
+                        backgroundColor: AppTheme.accentGreen,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                },
               ),
             ],
             const Divider(height: 1),

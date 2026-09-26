@@ -44,6 +44,7 @@ import 'screens/tryout/review_screen.dart';
 import 'screens/video/video_list_screen.dart';
 import 'screens/video/video_player_screen.dart';
 import 'screens/voucher/claim_voucher_screen.dart';
+import 'services/local_notification_service.dart';
 
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -51,6 +52,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
     await initializeDateFormatting('id_ID', null);
+    await LocalNotificationService.init();
   } catch (_) {}
   runApp(const KPMApp());
 }

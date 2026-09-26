@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/theme/app_theme.dart';
+import '../services/local_notification_service.dart';
 
 class PermissionRequestDialog extends StatelessWidget {
   final VoidCallback? onGranted;
@@ -176,6 +177,7 @@ class PermissionRequestDialog extends StatelessWidget {
                   borderRadius: BorderRadius.circular(24),
                   onTap: () async {
                     await markCompleted();
+                    await LocalNotificationService.requestPermission();
                     if (context.mounted) {
                       Navigator.pop(context);
                       if (onGranted != null) onGranted!();
