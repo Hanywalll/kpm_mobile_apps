@@ -101,7 +101,7 @@ class _AllFeaturesScreenState extends State<AllFeaturesScreen> {
           'icon': Icons.emoji_events_rounded,
           'color': const Color(0xFFF59E0B),
           'badge': 'TOP',
-          'action': 'leaderboard',
+          'route': '/leaderboard',
         },
       ],
     },

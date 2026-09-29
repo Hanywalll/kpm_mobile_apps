@@ -97,4 +97,13 @@ class ApiEndpoints {
   // Chat / AI Assistant
   static const String chatSend = '/chat/send';
   static const String chatHistory = '/chat/history';
+
+  // Leaderboard / Papan Skor Nasional
+  static const String leaderboard = '/leaderboard';
+
+  // Private Tutor Booking & Schedule
+  static const String tutors = '/tutors';
+  static String tutorDetail(String id) => '/tutors/$id';
+  static String bookTutorSchedule(String id) => '/tutors/$id/book-schedule';
+  static const String myTutorBookings = '/tutors/my-bookings';
 }

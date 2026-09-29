@@ -7,10 +7,12 @@ import 'core/theme/app_theme.dart';
 import 'services/ai_service.dart';
 import 'services/auth_service.dart';
 import 'services/dashboard_service.dart';
+import 'services/leaderboard_service.dart';
 import 'services/notification_service.dart';
 import 'services/package_service.dart';
 import 'services/practice_service.dart';
 import 'services/support_service.dart';
+import 'services/tutor_service.dart';
 import 'services/video_service.dart';
 
 import 'providers/auth_provider.dart';
@@ -27,6 +29,7 @@ import 'screens/checkout/midtrans_payment_screen.dart';
 import 'screens/checkout/payment_receipt_screen.dart';
 import 'screens/enroll/enroll_key_screen.dart';
 import 'screens/features/all_features_screen.dart';
+import 'screens/leaderboard/leaderboard_screen.dart';
 import 'screens/live_class/live_class_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'screens/notification/notification_screen.dart';
@@ -73,6 +76,8 @@ class KPMApp extends StatelessWidget {
     final dashboardService = DashboardService(client);
     final notificationService = NotificationService(client);
     final supportService = SupportService(client);
+    final leaderboardService = LeaderboardService(client);
+    final tutorService = TutorService(client);
 
     return MultiProvider(
       providers: [
@@ -86,6 +91,8 @@ class KPMApp extends StatelessWidget {
         Provider.value(value: aiService),
         Provider.value(value: dashboardService),
         Provider.value(value: supportService),
+        Provider.value(value: leaderboardService),
+        Provider.value(value: tutorService),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) {
@@ -119,6 +126,7 @@ class KPMApp extends StatelessWidget {
               '/ai_chat': (context) => const ChatScreen(),
               '/enroll_key': (context) => const ClaimVoucherScreen(),
               '/all_features': (context) => const AllFeaturesScreen(),
+              '/leaderboard': (context) => const LeaderboardScreen(),
               '/search': (context) => const SearchScreen(),
               '/profile': (context) => const ProfileScreen(),
               '/notification': (context) => const NotificationScreen(),
