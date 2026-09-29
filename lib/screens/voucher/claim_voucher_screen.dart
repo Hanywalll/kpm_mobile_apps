@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../services/dashboard_service.dart';
+import '../../widgets/admin_preview_guard.dart';
 import '../../widgets/primary_button.dart';
 
 class ClaimVoucherScreen extends StatefulWidget {
@@ -43,6 +44,9 @@ class _ClaimVoucherScreenState extends State<ClaimVoucherScreen> {
   }
 
   void _claimVoucher([String? specificCode]) async {
+    if (!AdminPreviewGuard.checkActionAllowed(context, actionName: 'mengklaim voucher diskon')) {
+      return;
+    }
     final code = specificCode ?? _voucherController.text.trim();
     if (code.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(

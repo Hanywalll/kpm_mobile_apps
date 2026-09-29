@@ -4,6 +4,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatter.dart';
 import '../../models/package_model.dart';
 import '../../providers/package_provider.dart';
+import '../../widgets/admin_preview_guard.dart';
 import '../../widgets/custom_alert_dialog.dart';
 
 class PackageListScreen extends StatefulWidget {
@@ -340,6 +341,9 @@ class _PackageListScreenState extends State<PackageListScreen> {
                             minimumSize: const Size(0, 36),
                           ),
                           onPressed: () {
+                            if (!AdminPreviewGuard.checkActionAllowed(context, actionName: 'membeli paket belajar')) {
+                              return;
+                            }
                             provider.fetchPackageDetail(pkg.id);
                             Navigator.pushNamed(context, '/checkout', arguments: pkg);
                           },

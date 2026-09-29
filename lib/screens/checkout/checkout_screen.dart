@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatter.dart';
 import '../../models/package_model.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/package_provider.dart';
+import '../../widgets/admin_preview_guard.dart';
 import '../../widgets/primary_button.dart';
 import 'midtrans_payment_screen.dart';
 
@@ -28,6 +30,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   bool _isProcessing = false;
 
   void _handlePayment(PackageModel mainPkg, double totalAmount, List<PackageModel> items) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.isAdmin) {
+      AdminPreviewGuard.checkActionAllowed(context, actionName: 'melakukan checkout pembayaran paket');
+      return;
+    }
+
     setState(() => _isProcessing = true);
     final packageProvider = Provider.of<PackageProvider>(context, listen: false);
 
@@ -104,6 +112,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ? itemsList.fold(0.0, (sum, i) => sum + i.effectivePrice)
             : pkg.effectivePrice);
 
+    final authProvider = Provider.of<AuthProvider>(context);
+    final isAdmin = authProvider.isAdmin;
+
     return Scaffold(
       backgroundColor: isDark ? AppTheme.darkBackgroundColor : AppTheme.backgroundColor,
       appBar: AppBar(
@@ -116,6 +127,39 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (isAdmin) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.amber.shade700.withValues(alpha: 0.3)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.shield_outlined, color: Color(0xFFB45309), size: 20),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Mode Pratinjau Administrator (Read-Only)',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFFB45309)),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Tombol pembayaran dinonaktifkan untuk mencegah pembuatan transaksi palsu di akun admin.',
+                            style: TextStyle(fontSize: 10, color: Color(0xFF92400E)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -260,7 +304,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             const SizedBox(height: 28),
 
             PrimaryButton(
-              text: 'Bayar Sekarang (${Formatter.currency(effectiveTotal)}) ➔',
+              text: isAdmin
+                  ? 'Mode Pratinjau (Pembelian Dinonaktifkan)'
+                  : 'Bayar Sekarang (${Formatter.currency(effectiveTotal)}) ➔',
+              backgroundColor: isAdmin ? Colors.grey.shade600 : AppTheme.primaryBlue,
               isLoading: _isProcessing,
               onPressed: () => _handlePayment(pkg, effectiveTotal, itemsList),
             ),

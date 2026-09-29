@@ -4,6 +4,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatter.dart';
 import '../../models/package_model.dart';
 import '../../providers/package_provider.dart';
+import '../../widgets/admin_preview_guard.dart';
 import '../../widgets/auth_guard_bottom_sheet.dart';
 import '../../widgets/custom_alert_dialog.dart';
 import '../checkout/checkout_screen.dart';
@@ -370,6 +371,9 @@ class _CartScreenState extends State<CartScreen> {
                             elevation: 1,
                           ),
                           onPressed: () {
+                            if (!AdminPreviewGuard.checkActionAllowed(context, actionName: 'melakukan checkout pesanan')) {
+                              return;
+                            }
                             AuthGuard.check(
                               context,
                               featureName: 'Checkout Keranjang Belajar',

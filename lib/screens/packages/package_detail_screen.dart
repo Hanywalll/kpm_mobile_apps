@@ -4,6 +4,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatter.dart';
 import '../../models/package_model.dart';
 import '../../providers/package_provider.dart';
+import '../../widgets/admin_preview_guard.dart';
 import '../../widgets/auth_guard_bottom_sheet.dart';
 import '../../widgets/custom_alert_dialog.dart';
 import '../checkout/checkout_screen.dart';
@@ -286,6 +287,9 @@ class PackageDetailScreen extends StatelessWidget {
                     ),
                     child: IconButton(
                       onPressed: () {
+                        if (!AdminPreviewGuard.checkActionAllowed(context, actionName: 'menambah paket ke keranjang')) {
+                          return;
+                        }
                         final added = packageProvider.toggleCart(pkg);
                         if (added) {
                           AppModal.showCartSuccess(
@@ -323,6 +327,9 @@ class PackageDetailScreen extends StatelessWidget {
                       elevation: 2,
                     ),
                     onPressed: () {
+                      if (!AdminPreviewGuard.checkActionAllowed(context, actionName: 'membeli paket belajar')) {
+                        return;
+                      }
                       AuthGuard.check(
                         context,
                         featureName: pkg.title,
