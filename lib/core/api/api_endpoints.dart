@@ -106,4 +106,18 @@ class ApiEndpoints {
   static String tutorDetail(String id) => '/tutors/$id';
   static String bookTutorSchedule(String id) => '/tutors/$id/book-schedule';
   static const String myTutorBookings = '/tutors/my-bookings';
+
+  // Admin CMS & Management Endpoints
+  static const String adminDashboard = '/admin/dashboard';
+  static const String adminUsers = '/admin/users';
+  static const String adminPackages = '/admin/packages';
+  static const String adminOrders = '/admin/orders';
+  static const String adminTransactions = '/admin/transactions';
+  static const String adminVideos = '/admin/videos';
+  static const String adminBanners = '/admin/banners';
+  static const String adminLiveClasses = '/admin/live-classes';
+  static const String adminModules = '/admin/modules';
+  static const String adminVouchers = '/admin/vouchers';
+  static const String adminTutors = '/admin/tutors';
+  static const String adminTestimonials = '/admin/testimonials';
 }

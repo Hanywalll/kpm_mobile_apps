@@ -911,6 +911,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _showPrivacyDialog,
             ),
           ]),
+          const SizedBox(height: 20),
+
+          _sectionTitle('ADMINISTRATOR & CMS', isDark),
+          _settingsGroup(context, [
+            _settingsTile(
+              context,
+              Icons.admin_panel_settings_rounded,
+              'Panel Kontrol Admin (CMS)',
+              'Kelola banner, live class, paket, video & voucher',
+              () => Navigator.pushNamed(context, '/admin_dashboard'),
+            ),
+          ]),
           const SizedBox(height: 24),
 
           if (isLoggedIn) ...[

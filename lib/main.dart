@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'core/api/api_client.dart';
 import 'core/theme/app_theme.dart';
 
+import 'services/admin_service.dart';
 import 'services/ai_service.dart';
 import 'services/auth_service.dart';
 import 'services/dashboard_service.dart';
@@ -20,6 +21,7 @@ import 'providers/package_provider.dart';
 import 'providers/practice_provider.dart';
 import 'providers/theme_provider.dart';
 
+import 'screens/admin/admin_dashboard_screen.dart';
 import 'screens/ai_tutor/chat_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
@@ -78,6 +80,7 @@ class KPMApp extends StatelessWidget {
     final supportService = SupportService(client);
     final leaderboardService = LeaderboardService(client);
     final tutorService = TutorService(client);
+    final adminService = AdminService(client);
 
     return MultiProvider(
       providers: [
@@ -93,6 +96,7 @@ class KPMApp extends StatelessWidget {
         Provider.value(value: supportService),
         Provider.value(value: leaderboardService),
         Provider.value(value: tutorService),
+        Provider.value(value: adminService),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) {
@@ -127,6 +131,7 @@ class KPMApp extends StatelessWidget {
               '/enroll_key': (context) => const ClaimVoucherScreen(),
               '/all_features': (context) => const AllFeaturesScreen(),
               '/leaderboard': (context) => const LeaderboardScreen(),
+              '/admin_dashboard': (context) => const AdminDashboardScreen(),
               '/search': (context) => const SearchScreen(),
               '/profile': (context) => const ProfileScreen(),
               '/notification': (context) => const NotificationScreen(),

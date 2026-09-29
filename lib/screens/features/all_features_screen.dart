@@ -169,6 +169,13 @@ class _AllFeaturesScreenState extends State<AllFeaturesScreen> {
           'badge': 'WA',
           'action': 'contact_cs',
         },
+        {
+          'title': 'Panel Admin',
+          'icon': Icons.admin_panel_settings_rounded,
+          'color': const Color(0xFF1D4ED8),
+          'badge': 'CMS',
+          'route': '/admin_dashboard',
+        },
       ],
     },
   ];
