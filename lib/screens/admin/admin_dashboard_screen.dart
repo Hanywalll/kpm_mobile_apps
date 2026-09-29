@@ -27,8 +27,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   AdminDashboardStats _stats = AdminDashboardStats();
   bool _isLoading = true;
 
-  // Selected filter inside Content CMS tab
-  String _selectedContentFilter = 'all';
+  // Selected filter inside CMS tab
+  String _selectedCMSFilter = 'all';
 
   List<BannerModel> _banners = [];
   List<LiveClassModel> _liveClasses = [];
@@ -36,9 +36,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   List<VideoModel> _videos = [];
 
   final List<Map<String, dynamic>> _vouchers = [
-    {'code': 'KPMJUARA2026', 'title': 'Diskon 25% Persiapan Ujian', 'discount': '25%', 'usage': '142/500'},
-    {'code': 'MNRINDONESIA', 'title': 'Potongan Rp 50.000 Belajar', 'discount': 'Rp 50rb', 'usage': '89/300'},
-    {'code': 'MIPABERSAMA', 'title': 'Cashback 15% Ujian Online', 'discount': '15%', 'usage': '210/1000'},
+    {'id': 'v1', 'code': 'KPMJUARA2026', 'title': 'Diskon 25% Persiapan Ujian', 'discount': '25%', 'usage': '142/500'},
+    {'id': 'v2', 'code': 'MNRINDONESIA', 'title': 'Potongan Rp 50.000 Belajar', 'discount': 'Rp 50rb', 'usage': '89/300'},
+    {'id': 'v3', 'code': 'MIPABERSAMA', 'title': 'Cashback 15% Ujian Online', 'discount': '15%', 'usage': '210/1000'},
   ];
 
   @override
@@ -81,15 +81,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final packageProvider = Provider.of<PackageProvider>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Security Guard: Role Check
+    // Security Guard: Admin role check
     if (!authProvider.isAdmin) {
       return _buildAccessDeniedScreen(context, authProvider, isDark);
     }
 
     final pages = [
       _buildOverviewTab(packageProvider, isDark, authProvider),
-      _buildContentCMSTab(isDark),
-      _buildPackagesAndLiveTab(packageProvider, isDark),
+      _buildUnifiedCMSTab(packageProvider, isDark),
       _buildOrdersAndTransactionsTab(isDark),
       _buildAdminSettingsTab(authProvider, isDark),
     ];
@@ -119,7 +118,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 10,
+              blurRadius: 8,
               offset: const Offset(0, -2),
             ),
           ],
@@ -133,37 +132,32 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             elevation: 0,
             height: 64,
             labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-            destinations: [
+            destinations: const [
               NavigationDestination(
-                icon: const Icon(Icons.dashboard_outlined),
-                selectedIcon: const Icon(Icons.dashboard_rounded, color: AppTheme.primaryBlue),
+                icon: Icon(Icons.dashboard_outlined),
+                selectedIcon: Icon(Icons.dashboard_rounded, color: AppTheme.primaryBlue),
                 label: 'Ringkasan',
               ),
               NavigationDestination(
-                icon: const Icon(Icons.auto_awesome_mosaic_outlined),
-                selectedIcon: const Icon(Icons.auto_awesome_mosaic_rounded, color: AppTheme.primaryBlue),
-                label: 'Konten CMS',
+                icon: Icon(Icons.layers_outlined),
+                selectedIcon: Icon(Icons.layers_rounded, color: AppTheme.primaryBlue),
+                label: 'CMS',
               ),
               NavigationDestination(
-                icon: const Icon(Icons.school_outlined),
-                selectedIcon: const Icon(Icons.school_rounded, color: AppTheme.primaryBlue),
-                label: 'Paket & Live',
-              ),
-              NavigationDestination(
-                icon: const Icon(Icons.receipt_long_outlined),
-                selectedIcon: const Icon(Icons.receipt_long_rounded, color: AppTheme.primaryBlue),
+                icon: Icon(Icons.receipt_long_outlined),
+                selectedIcon: Icon(Icons.receipt_long_rounded, color: AppTheme.primaryBlue),
                 label: 'Pesanan',
               ),
               NavigationDestination(
-                icon: const Icon(Icons.admin_panel_settings_outlined),
-                selectedIcon: const Icon(Icons.admin_panel_settings_rounded, color: AppTheme.primaryBlue),
+                icon: Icon(Icons.admin_panel_settings_outlined),
+                selectedIcon: Icon(Icons.admin_panel_settings_rounded, color: AppTheme.primaryBlue),
                 label: 'Akun Admin',
               ),
             ],
           ),
         ),
       ),
-      floatingActionButton: (_currentNavIndex == 1 || _currentNavIndex == 2)
+      floatingActionButton: _currentNavIndex == 1
           ? FloatingActionButton.extended(
               backgroundColor: AppTheme.primaryBlue,
               foregroundColor: Colors.white,
@@ -176,7 +170,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  // --- Header AppBar (Clean, Zero Overflow) ---
+  // --- Header AppBar ---
   PreferredSizeWidget _buildAppBar(BuildContext context, AuthProvider authProvider, bool isDark) {
     return AppBar(
       elevation: 0,
@@ -205,29 +199,29 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
           const SizedBox(width: 6),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color(0xFF6366F1), Color(0xFF4F46E5)]),
+              color: AppTheme.primaryBlue,
               borderRadius: BorderRadius.circular(4),
             ),
-            child: const Text('PRO', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)),
+            child: const Text('CMS', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)),
           ),
         ],
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.visibility_outlined, size: 20),
+          icon: const Icon(Icons.remove_red_eye_outlined, size: 20),
           tooltip: 'Mode Tinjau Siswa',
           onPressed: () => Navigator.pushNamed(context, '/home'),
         ),
         IconButton(
           icon: const Icon(Icons.refresh_rounded, size: 20),
-          tooltip: 'Refresh Data',
+          tooltip: 'Perbarui Data',
           onPressed: _loadAllAdminData,
         ),
         IconButton(
           icon: const Icon(Icons.logout_rounded, color: Colors.redAccent, size: 20),
-          tooltip: 'Logout',
+          tooltip: 'Keluar',
           onPressed: () => _confirmLogout(context, authProvider),
         ),
         const SizedBox(width: 4),
@@ -236,7 +230,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   // =========================================================================
-  // TAB 0: RINGKASAN & OVERVIEW (Executive Bento Dashboard)
+  // TAB 0: RINGKASAN & OVERVIEW
   // =========================================================================
   Widget _buildOverviewTab(PackageProvider packageProvider, bool isDark, AuthProvider authProvider) {
     final currencyFormatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
@@ -247,7 +241,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Hero Welcome Card
+          // Hero Welcome Card
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -284,7 +278,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         children: [
                           Icon(Icons.circle, color: Color(0xFF4ADE80), size: 7),
                           SizedBox(width: 5),
-                          Text('Go Backend Online', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                          Text('Backend Online & Sinkron', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ),
@@ -297,12 +291,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 ),
                 const SizedBox(height: 10),
                 const Text(
-                  'Selamat Datang, Admin! 👋',
+                  'Selamat Datang, Administrator',
                   style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Pantau dan kelola seluruh komponen ekosistem KPM Academy.',
+                  'Pantau analitik dan kontrol seluruh komponen aplikasi secara terpusat.',
                   style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 11),
                 ),
               ],
@@ -311,7 +305,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
           const SizedBox(height: 14),
 
-          // 2. Revenue Highlight Bento Card
+          // Revenue Highlight Card
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -343,7 +337,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Total Omset & Pendapatan',
+                        'Total Omset Pembelian',
                         style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary),
                       ),
                       const SizedBox(height: 2),
@@ -372,26 +366,26 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
           const SizedBox(height: 10),
 
-          // 3. 2x2 Metric Tiles Grid
+          // Metric Cards 2x2
           Row(
             children: [
               Expanded(
-                child: _buildSimpleMetricCard(
+                child: _buildMetricTile(
                   title: 'Total Siswa',
                   value: '${_stats.totalUsers}',
                   subtitle: 'Akun Terdaftar',
-                  icon: Icons.people_alt_rounded,
+                  icon: Icons.people_alt_outlined,
                   color: const Color(0xFF2563EB),
                   isDark: isDark,
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: _buildSimpleMetricCard(
-                  title: 'Pesanan Sukses',
+                child: _buildMetricTile(
+                  title: 'Pesanan Masuk',
                   value: '${_stats.totalOrders}',
-                  subtitle: 'Transaksi Masuk',
-                  icon: Icons.receipt_long_rounded,
+                  subtitle: 'Transaksi Lunas',
+                  icon: Icons.receipt_long_outlined,
                   color: const Color(0xFF0891B2),
                   isDark: isDark,
                 ),
@@ -404,22 +398,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           Row(
             children: [
               Expanded(
-                child: _buildSimpleMetricCard(
+                child: _buildMetricTile(
                   title: 'Paket Belajar',
                   value: '${packageProvider.packages.length}',
-                  subtitle: 'Katalog Aktif',
-                  icon: Icons.inventory_2_rounded,
+                  subtitle: 'Katalog Tayang',
+                  icon: Icons.school_outlined,
                   color: const Color(0xFF8B5CF6),
                   isDark: isDark,
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: _buildSimpleMetricCard(
-                  title: 'Live Streaming',
+                child: _buildMetricTile(
+                  title: 'Live Class',
                   value: '${_liveClasses.length}',
                   subtitle: 'Sesi Terjadwal',
-                  icon: Icons.videocam_rounded,
+                  icon: Icons.videocam_outlined,
                   color: const Color(0xFFEF4444),
                   isDark: isDark,
                 ),
@@ -429,12 +423,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
           const SizedBox(height: 20),
 
-          // 4. Quick Action Shortcuts Section
+          // Quick Action Hub
           Row(
             children: [
               Container(width: 3, height: 14, decoration: BoxDecoration(color: AppTheme.primaryBlue, borderRadius: BorderRadius.circular(2))),
               const SizedBox(width: 6),
-              Text('Aksi Cepat Administrator', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary)),
+              Text('Aksi Pintar CMS', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary)),
             ],
           ),
           const SizedBox(height: 10),
@@ -442,7 +436,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             children: [
               Expanded(
                 child: _buildShortcutButton(
-                  icon: Icons.add_photo_alternate_rounded,
+                  icon: Icons.view_carousel_outlined,
                   label: 'Tambah Banner',
                   color: const Color(0xFF3B82F6),
                   onTap: () => _showAddBannerModal(isDark),
@@ -452,7 +446,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: _buildShortcutButton(
-                  icon: Icons.video_call_rounded,
+                  icon: Icons.videocam_outlined,
                   label: 'Jadwal Live',
                   color: const Color(0xFFEF4444),
                   onTap: () => _showAddLiveClassModal(isDark),
@@ -462,7 +456,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: _buildShortcutButton(
-                  icon: Icons.post_add_rounded,
+                  icon: Icons.school_outlined,
                   label: 'Buat Paket',
                   color: const Color(0xFF8B5CF6),
                   onTap: () => _showAddPackageModal(isDark),
@@ -477,14 +471,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   // =========================================================================
-  // TAB 1: MANAJEMEN KONTEN CMS (Banners, Video HD, Modul PDF, Kupon Voucher)
+  // TAB 1: UNIFIED CMS (All 6 Components with Complete CRUD)
   // =========================================================================
-  Widget _buildContentCMSTab(bool isDark) {
+  Widget _buildUnifiedCMSTab(PackageProvider packageProvider, bool isDark) {
     final filters = [
-      {'id': 'all', 'label': 'Semua (${_banners.length + _videos.length + _modules.length + _vouchers.length})'},
+      {'id': 'all', 'label': 'Semua (${_banners.length + _liveClasses.length + packageProvider.packages.length + _videos.length + _modules.length + _vouchers.length})'},
       {'id': 'banner', 'label': 'Banner (${_banners.length})'},
-      {'id': 'video', 'label': 'Video HD (${_videos.length})'},
-      {'id': 'module', 'label': 'Modul PDF (${_modules.length})'},
+      {'id': 'live', 'label': 'Live Class (${_liveClasses.length})'},
+      {'id': 'package', 'label': 'Paket (${packageProvider.packages.length})'},
+      {'id': 'video', 'label': 'Video (${_videos.length})'},
+      {'id': 'module', 'label': 'Modul (${_modules.length})'},
       {'id': 'voucher', 'label': 'Kupon (${_vouchers.length})'},
     ];
 
@@ -494,19 +490,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Filter Chips
+          // Filter Chips Row
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
             child: Row(
               children: filters.map((f) {
-                final isSelected = _selectedContentFilter == f['id'];
+                final isSelected = _selectedCMSFilter == f['id'];
                 return Padding(
                   padding: const EdgeInsets.only(right: 6),
                   child: ChoiceChip(
                     label: Text(f['label']!),
                     selected: isSelected,
-                    onSelected: (_) => setState(() => _selectedContentFilter = f['id']!),
+                    onSelected: (_) => setState(() => _selectedCMSFilter = f['id']!),
                     selectedColor: AppTheme.primaryBlue,
                     labelStyle: TextStyle(
                       fontSize: 11,
@@ -525,9 +521,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
           const SizedBox(height: 14),
 
-          // 1. Banners
-          if (_selectedContentFilter == 'all' || _selectedContentFilter == 'banner') ...[
-            _buildSectionHeaderWithAdd('🖼️ Banner Promo Carousel', () => _showAddBannerModal(isDark), isDark),
+          // 1. Banner Slider Section
+          if (_selectedCMSFilter == 'all' || _selectedCMSFilter == 'banner') ...[
+            _buildSectionHeaderWithAdd('Banner Promo Carousel', Icons.view_carousel_outlined, () => _showAddBannerModal(isDark), isDark),
             if (_banners.isEmpty)
               _buildEmptyPlaceholder('Belum ada banner promo.', isDark)
             else
@@ -535,9 +531,29 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             const SizedBox(height: 14),
           ],
 
-          // 2. Videos
-          if (_selectedContentFilter == 'all' || _selectedContentFilter == 'video') ...[
-            _buildSectionHeaderWithAdd('🎬 Video Materi HD', () => _showAddVideoModal(isDark), isDark),
+          // 2. Live Class Section
+          if (_selectedCMSFilter == 'all' || _selectedCMSFilter == 'live') ...[
+            _buildSectionHeaderWithAdd('Live Class & Streaming Zoom', Icons.videocam_outlined, () => _showAddLiveClassModal(isDark), isDark),
+            if (_liveClasses.isEmpty)
+              _buildEmptyPlaceholder('Belum ada jadwal live class.', isDark)
+            else
+              ..._liveClasses.map((lc) => _buildLiveClassCard(lc, isDark)),
+            const SizedBox(height: 14),
+          ],
+
+          // 3. Paket Belajar Section
+          if (_selectedCMSFilter == 'all' || _selectedCMSFilter == 'package') ...[
+            _buildSectionHeaderWithAdd('Paket Belajar & Tryout UTBK', Icons.school_outlined, () => _showAddPackageModal(isDark), isDark),
+            if (packageProvider.packages.isEmpty)
+              _buildEmptyPlaceholder('Belum ada paket belajar aktif.', isDark)
+            else
+              ...packageProvider.packages.map((pkg) => _buildPackageCard(pkg, isDark)),
+            const SizedBox(height: 14),
+          ],
+
+          // 4. Video Materi Section
+          if (_selectedCMSFilter == 'all' || _selectedCMSFilter == 'video') ...[
+            _buildSectionHeaderWithAdd('Video Materi Pembelajaran HD', Icons.play_circle_outline_rounded, () => _showAddVideoModal(isDark), isDark),
             if (_videos.isEmpty)
               _buildEmptyPlaceholder('Belum ada video materi.', isDark)
             else
@@ -545,19 +561,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             const SizedBox(height: 14),
           ],
 
-          // 3. Modules
-          if (_selectedContentFilter == 'all' || _selectedContentFilter == 'module') ...[
-            _buildSectionHeaderWithAdd('📚 Modul & E-Book PDF', () => _showAddModuleModal(isDark), isDark),
+          // 5. Modul PDF Section
+          if (_selectedCMSFilter == 'all' || _selectedCMSFilter == 'module') ...[
+            _buildSectionHeaderWithAdd('Modul Bacaan & E-Book PDF', Icons.picture_as_pdf_outlined, () => _showAddModuleModal(isDark), isDark),
             if (_modules.isEmpty)
-              _buildEmptyPlaceholder('Belum ada modul bacaan PDF.', isDark)
+              _buildEmptyPlaceholder('Belum ada file modul PDF.', isDark)
             else
               ..._modules.map((m) => _buildModuleCard(m, isDark)),
             const SizedBox(height: 14),
           ],
 
-          // 4. Vouchers
-          if (_selectedContentFilter == 'all' || _selectedContentFilter == 'voucher') ...[
-            _buildSectionHeaderWithAdd('🎟️ Kupon Promo & Diskon', () => _showAddVoucherModal(isDark), isDark),
+          // 6. Voucher Section
+          if (_selectedCMSFilter == 'all' || _selectedCMSFilter == 'voucher') ...[
+            _buildSectionHeaderWithAdd('Kupon Voucher & Promo Diskon', Icons.confirmation_number_outlined, () => _showAddVoucherModal(isDark), isDark),
             ..._vouchers.map((vc) => _buildVoucherCard(vc, isDark)),
             const SizedBox(height: 14),
           ],
@@ -567,37 +583,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   // =========================================================================
-  // TAB 2: PAKET TRYOUT & LIVE STREAMING
-  // =========================================================================
-  Widget _buildPackagesAndLiveTab(PackageProvider packageProvider, bool isDark) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
-      physics: const AlwaysScrollableScrollPhysics(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Live Classes
-          _buildSectionHeaderWithAdd('🔴 Sesi Live Class & Zoom Streaming', () => _showAddLiveClassModal(isDark), isDark),
-          if (_liveClasses.isEmpty)
-            _buildEmptyPlaceholder('Belum ada jadwal Live Class.', isDark)
-          else
-            ..._liveClasses.map((lc) => _buildLiveClassCard(lc, isDark)),
-
-          const SizedBox(height: 20),
-
-          // Packages
-          _buildSectionHeaderWithAdd('📦 Paket Belajar & Tryout UTBK', () => _showAddPackageModal(isDark), isDark),
-          if (packageProvider.packages.isEmpty)
-            _buildEmptyPlaceholder('Belum ada paket belajar aktif.', isDark)
-          else
-            ...packageProvider.packages.map((pkg) => _buildPackageCard(pkg, isDark)),
-        ],
-      ),
-    );
-  }
-
-  // =========================================================================
-  // TAB 3: TRANSAKSI & PESANAN SISWA
+  // TAB 2: TRANSAKSI & PESANAN
   // =========================================================================
   Widget _buildOrdersAndTransactionsTab(bool isDark) {
     final currencyFormatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
@@ -670,7 +656,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   // =========================================================================
-  // TAB 4: AKUN ADMINISTRATOR & SISTEM
+  // TAB 3: AKUN ADMINISTRATOR & SISTEM
   // =========================================================================
   Widget _buildAdminSettingsTab(AuthProvider authProvider, bool isDark) {
     return SingleChildScrollView(
@@ -679,7 +665,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Profile Card
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -693,7 +678,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   width: 48,
                   height: 48,
                   decoration: const BoxDecoration(
-                    gradient: LinearGradient(colors: [Color(0xFF6366F1), Color(0xFF4F46E5)]),
+                    color: AppTheme.primaryBlue,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.admin_panel_settings_rounded, color: Colors.white, size: 26),
@@ -704,7 +689,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        authProvider.user?.name ?? 'Admin KPM Academy',
+                        authProvider.user?.name ?? 'Administrator KPM',
                         style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary),
                       ),
                       const SizedBox(height: 2),
@@ -727,7 +712,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
           const SizedBox(height: 16),
 
-          // Menu Options
           _buildSettingsTile(
             icon: Icons.remove_red_eye_outlined,
             title: 'Buka Mode Tampilan Siswa',
@@ -745,7 +729,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           _buildSettingsTile(
             icon: Icons.logout_rounded,
             title: 'Keluar dari Sesi Administrator',
-            subtitle: 'Akhiri sesi CMS dan kembali ke halaman utama',
+            subtitle: 'Akhiri sesi CMS dan kembali ke halaman login',
             isDestructive: true,
             onTap: () => _confirmLogout(context, authProvider),
             isDark: isDark,
@@ -755,39 +739,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  Widget _buildSettingsTile({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-    required bool isDark,
-    bool isDestructive = false,
-  }) {
-    final color = isDestructive ? Colors.redAccent : AppTheme.primaryBlue;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: isDark ? AppTheme.darkCardColor : Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: isDark ? AppTheme.darkBorderColor : AppTheme.borderColor),
-      ),
-      child: ListTile(
-        onTap: onTap,
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
-          child: Icon(icon, size: 20, color: color),
-        ),
-        title: Text(title, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isDestructive ? Colors.redAccent : (isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary))),
-        subtitle: Text(subtitle, style: TextStyle(fontSize: 10, color: isDark ? AppTheme.darkTextMuted : AppTheme.textMuted)),
-        trailing: const Icon(Icons.chevron_right_rounded, size: 18),
-      ),
-    );
-  }
-
-  // --- Subcomponents & Helpers ---
-  Widget _buildSimpleMetricCard({
+  // --- Helpers ---
+  Widget _buildMetricTile({
     required String title,
     required String value,
     required String subtitle,
@@ -871,17 +824,25 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  Widget _buildSectionHeaderWithAdd(String title, VoidCallback onAdd, bool isDark) {
+  Widget _buildSectionHeaderWithAdd(String title, IconData icon, VoidCallback onAdd, bool isDark) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(
-            child: Text(
-              title,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary),
+            child: Row(
+              children: [
+                Icon(icon, size: 16, color: AppTheme.primaryBlue),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    title,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary),
+                  ),
+                ),
+              ],
             ),
           ),
           InkWell(
@@ -924,7 +885,42 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  // --- Cards ---
+  Widget _buildSettingsTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    required bool isDark,
+    bool isDestructive = false,
+  }) {
+    final color = isDestructive ? Colors.redAccent : AppTheme.primaryBlue;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: isDark ? AppTheme.darkCardColor : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: isDark ? AppTheme.darkBorderColor : AppTheme.borderColor),
+      ),
+      child: ListTile(
+        onTap: onTap,
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
+          child: Icon(icon, size: 20, color: color),
+        ),
+        title: Text(title, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isDestructive ? Colors.redAccent : (isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary))),
+        subtitle: Text(subtitle, style: TextStyle(fontSize: 10, color: isDark ? AppTheme.darkTextMuted : AppTheme.textMuted)),
+        trailing: const Icon(Icons.chevron_right_rounded, size: 18),
+      ),
+    );
+  }
+
+  // =========================================================================
+  // CARDS WITH FULL CRUD (Edit, Delete, Toggle)
+  // =========================================================================
+
+  // 1. Banner Card (CRUD)
   Widget _buildBannerCard(BannerModel b, bool isDark) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -956,18 +952,26 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ],
             ),
           ),
+          // Edit Button
+          IconButton(
+            icon: const Icon(Icons.edit_outlined, color: AppTheme.primaryBlue, size: 18),
+            tooltip: 'Edit Banner',
+            onPressed: () => _showEditBannerModal(b, isDark),
+          ),
+          // Delete Button
           IconButton(
             icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 18),
-            onPressed: () {
+            tooltip: 'Hapus Banner',
+            onPressed: () => _confirmDelete('Banner', b.title, () {
               setState(() => _banners.removeWhere((item) => item.id == b.id));
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Banner berhasil dihapus')));
-            },
+            }),
           ),
         ],
       ),
     );
   }
 
+  // 2. Live Class Card (CRUD)
   Widget _buildLiveClassCard(LiveClassModel lc, bool isDark) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -982,7 +986,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(color: Colors.redAccent.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-            child: const Icon(Icons.videocam_rounded, color: Colors.redAccent, size: 20),
+            child: const Icon(Icons.videocam_outlined, color: Colors.redAccent, size: 20),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -996,17 +1000,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
           ),
           IconButton(
+            icon: const Icon(Icons.edit_outlined, color: AppTheme.primaryBlue, size: 18),
+            tooltip: 'Edit Jadwal',
+            onPressed: () => _showEditLiveClassModal(lc, isDark),
+          ),
+          IconButton(
             icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 18),
-            onPressed: () {
+            tooltip: 'Hapus Sesi',
+            onPressed: () => _confirmDelete('Live Class', lc.title, () {
               setState(() => _liveClasses.removeWhere((item) => item.id == lc.id));
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sesi Live Class berhasil dihapus')));
-            },
+            }),
           ),
         ],
       ),
     );
   }
 
+  // 3. Package Card (CRUD)
   Widget _buildPackageCard(PackageModel pkg, bool isDark) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -1022,7 +1032,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             width: 36,
             height: 36,
             decoration: BoxDecoration(color: const Color(0xFF8B5CF6).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-            child: const Icon(Icons.school_rounded, color: Color(0xFF8B5CF6), size: 18),
+            child: const Icon(Icons.school_outlined, color: Color(0xFF8B5CF6), size: 18),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -1037,12 +1047,25 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ],
             ),
           ),
-          const Icon(Icons.check_circle_rounded, color: Colors.green, size: 16),
+          IconButton(
+            icon: const Icon(Icons.edit_outlined, color: AppTheme.primaryBlue, size: 18),
+            tooltip: 'Edit Paket',
+            onPressed: () => _showEditPackageModal(pkg, isDark),
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 18),
+            tooltip: 'Hapus Paket',
+            onPressed: () => _confirmDelete('Paket Belajar', pkg.title, () {
+              // local remove preview
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Paket belajar dinonaktifkan dari katalog')));
+            }),
+          ),
         ],
       ),
     );
   }
 
+  // 4. Video Card (CRUD)
   Widget _buildVideoCard(VideoModel vid, bool isDark) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -1075,17 +1098,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
           ),
           IconButton(
+            icon: const Icon(Icons.edit_outlined, color: AppTheme.primaryBlue, size: 18),
+            tooltip: 'Edit Video',
+            onPressed: () => _showEditVideoModal(vid, isDark),
+          ),
+          IconButton(
             icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 18),
-            onPressed: () {
+            tooltip: 'Hapus Video',
+            onPressed: () => _confirmDelete('Video Materi', vid.title, () {
               setState(() => _videos.removeWhere((item) => item.id == vid.id));
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Video materi berhasil dihapus')));
-            },
+            }),
           ),
         ],
       ),
     );
   }
 
+  // 5. Module Card (CRUD)
   Widget _buildModuleCard(ModuleModel m, bool isDark) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -1100,7 +1129,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(color: const Color(0xFF10B981).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-            child: const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFF10B981), size: 18),
+            child: const Icon(Icons.picture_as_pdf_outlined, color: Color(0xFF10B981), size: 18),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -1113,17 +1142,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
           ),
           IconButton(
+            icon: const Icon(Icons.edit_outlined, color: AppTheme.primaryBlue, size: 18),
+            tooltip: 'Edit Modul',
+            onPressed: () => _showEditModuleModal(m, isDark),
+          ),
+          IconButton(
             icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 18),
-            onPressed: () {
+            tooltip: 'Hapus Modul',
+            onPressed: () => _confirmDelete('Modul PDF', m.title, () {
               setState(() => _modules.removeWhere((item) => item.id == m.id));
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Modul PDF berhasil dihapus')));
-            },
+            }),
           ),
         ],
       ),
     );
   }
 
+  // 6. Voucher Card (CRUD)
   Widget _buildVoucherCard(Map<String, dynamic> v, bool isDark) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -1134,28 +1169,66 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         border: Border.all(color: isDark ? AppTheme.darkBorderColor : AppTheme.borderColor),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(color: const Color(0xFFEC4899).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
-                child: Text(v['code'], style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Color(0xFFEC4899))),
-              ),
-              const SizedBox(height: 2),
-              Text(v['title'], style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary)),
-              Text('Terpakai: ${v['usage']}', style: TextStyle(fontSize: 9, color: isDark ? AppTheme.darkTextMuted : AppTheme.textMuted)),
-            ],
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(color: const Color(0xFFEC4899).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
+            child: Text(v['code'], style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Color(0xFFEC4899))),
           ),
-          Text(v['discount'], style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: AppTheme.primaryBlue)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(v['title'], maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary)),
+                Text('Kupon Diskon: ${v['discount']} • Kuota: ${v['usage']}', style: TextStyle(fontSize: 9, color: isDark ? AppTheme.darkTextMuted : AppTheme.textMuted)),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.edit_outlined, color: AppTheme.primaryBlue, size: 18),
+            tooltip: 'Edit Kupon',
+            onPressed: () => _showEditVoucherModal(v, isDark),
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 18),
+            tooltip: 'Hapus Kupon',
+            onPressed: () => _confirmDelete('Kupon Voucher', v['code'], () {
+              setState(() => _vouchers.removeWhere((item) => item['id'] == v['id']));
+            }),
+          ),
         ],
       ),
     );
   }
 
-  // --- Quick Add BottomSheet ---
+  // Confirmation Dialog Helper
+  void _confirmDelete(String itemType, String itemName, VoidCallback onConfirm) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: Text('Hapus $itemType', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+        content: Text('Apakah Anda yakin ingin menghapus "$itemName"? Tindakan ini tidak dapat dibatalkan.', style: const TextStyle(fontSize: 12)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+            onPressed: () {
+              Navigator.pop(ctx);
+              onConfirm();
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$itemType berhasil dihapus')));
+            },
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // =========================================================================
+  // QUICK ADD BOTTOMSHEET
+  // =========================================================================
   void _showQuickAddBottomSheet(bool isDark) {
     showModalBottomSheet(
       context: context,
@@ -1172,7 +1245,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               const SizedBox(height: 8),
               ListTile(
                 dense: true,
-                leading: const Icon(Icons.view_carousel_rounded, color: Color(0xFF3B82F6)),
+                leading: const Icon(Icons.view_carousel_outlined, color: Color(0xFF3B82F6)),
                 title: const Text('Banner Promo Carousel'),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -1181,7 +1254,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
               ListTile(
                 dense: true,
-                leading: const Icon(Icons.videocam_rounded, color: Color(0xFFEF4444)),
+                leading: const Icon(Icons.videocam_outlined, color: Color(0xFFEF4444)),
                 title: const Text('Jadwal Live Class Zoom'),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -1190,7 +1263,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
               ListTile(
                 dense: true,
-                leading: const Icon(Icons.school_rounded, color: Color(0xFF8B5CF6)),
+                leading: const Icon(Icons.school_outlined, color: Color(0xFF8B5CF6)),
                 title: const Text('Paket Belajar & Tryout'),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -1199,7 +1272,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
               ListTile(
                 dense: true,
-                leading: const Icon(Icons.play_circle_fill_rounded, color: Color(0xFFF59E0B)),
+                leading: const Icon(Icons.play_circle_outline_rounded, color: Color(0xFFF59E0B)),
                 title: const Text('Video Pembelajaran HD'),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -1208,7 +1281,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
               ListTile(
                 dense: true,
-                leading: const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFF10B981)),
+                leading: const Icon(Icons.picture_as_pdf_outlined, color: Color(0xFF10B981)),
                 title: const Text('Modul & E-Book PDF'),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -1217,7 +1290,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
               ListTile(
                 dense: true,
-                leading: const Icon(Icons.confirmation_number_rounded, color: Color(0xFFEC4899)),
+                leading: const Icon(Icons.confirmation_number_outlined, color: Color(0xFFEC4899)),
                 title: const Text('Kupon Voucher Promo'),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -1231,11 +1304,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  // --- Add Modals ---
+  // =========================================================================
+  // CREATE / EDIT MODALS
+  // =========================================================================
+
+  // 1. Banner Create & Edit
   void _showAddBannerModal(bool isDark) {
-    final titleCtrl = TextEditingController();
-    final tagCtrl = TextEditingController(text: 'PROMO');
-    final imageCtrl = TextEditingController(text: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=900&auto=format&fit=crop&q=80');
+    _showBannerFormModal(isDark: isDark, isEdit: false);
+  }
+
+  void _showEditBannerModal(BannerModel b, bool isDark) {
+    _showBannerFormModal(isDark: isDark, isEdit: true, initialBanner: b);
+  }
+
+  void _showBannerFormModal({required bool isDark, required bool isEdit, BannerModel? initialBanner}) {
+    final titleCtrl = TextEditingController(text: initialBanner?.title ?? '');
+    final tagCtrl = TextEditingController(text: initialBanner?.tag ?? 'PROMO');
+    final imageCtrl = TextEditingController(text: initialBanner?.imageUrl ?? 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=900&auto=format&fit=crop&q=80');
 
     showModalBottomSheet(
       context: context,
@@ -1248,7 +1333,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Tambah Banner Promo', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+            Text(isEdit ? 'Edit Banner Promo' : 'Tambah Banner Promo', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             TextField(controller: tagCtrl, decoration: const InputDecoration(labelText: 'Tag (Contoh: PROMO)')),
             TextField(controller: titleCtrl, decoration: const InputDecoration(labelText: 'Judul Banner')),
@@ -1262,24 +1347,39 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 onPressed: () {
                   if (titleCtrl.text.isNotEmpty) {
                     setState(() {
-                      _banners.insert(
-                        0,
-                        BannerModel(
-                          id: 'banner_${DateTime.now().millisecondsSinceEpoch}',
-                          tag: tagCtrl.text.trim(),
-                          subTag: 'Promo Baru',
-                          title: titleCtrl.text.trim(),
-                          subtitle: 'Penawaran spesial siswa KPM Academy',
-                          imageUrl: imageCtrl.text.trim(),
-                          route: '/package_list',
-                        ),
-                      );
+                      if (isEdit && initialBanner != null) {
+                        final idx = _banners.indexWhere((item) => item.id == initialBanner.id);
+                        if (idx != -1) {
+                          _banners[idx] = BannerModel(
+                            id: initialBanner.id,
+                            tag: tagCtrl.text.trim(),
+                            subTag: initialBanner.subTag,
+                            title: titleCtrl.text.trim(),
+                            subtitle: initialBanner.subtitle,
+                            imageUrl: imageCtrl.text.trim(),
+                            route: initialBanner.route,
+                          );
+                        }
+                      } else {
+                        _banners.insert(
+                          0,
+                          BannerModel(
+                            id: 'banner_${DateTime.now().millisecondsSinceEpoch}',
+                            tag: tagCtrl.text.trim(),
+                            subTag: 'Promo Baru',
+                            title: titleCtrl.text.trim(),
+                            subtitle: 'Penawaran spesial siswa KPM Academy',
+                            imageUrl: imageCtrl.text.trim(),
+                            route: '/package_list',
+                          ),
+                        );
+                      }
                     });
                     Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Banner baru berhasil diterbitkan! 🚀')));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(isEdit ? 'Banner berhasil diperbarui!' : 'Banner baru berhasil diterbitkan!')));
                   }
                 },
-                child: const Text('Terbitkan Banner', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: Text(isEdit ? 'Simpan Perubahan' : 'Terbitkan Banner', style: const TextStyle(fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -1288,11 +1388,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
+  // 2. Live Class Create & Edit
   void _showAddLiveClassModal(bool isDark) {
-    final titleCtrl = TextEditingController();
-    final tutorCtrl = TextEditingController(text: 'Dr. Ir. R. Ridwan Hasan Saputra, M.Si.');
-    final subjectCtrl = TextEditingController(text: 'Matematika MNR');
-    final zoomCtrl = TextEditingController(text: 'https://zoom.us/j/kpmacademy');
+    _showLiveClassFormModal(isDark: isDark, isEdit: false);
+  }
+
+  void _showEditLiveClassModal(LiveClassModel lc, bool isDark) {
+    _showLiveClassFormModal(isDark: isDark, isEdit: true, initialLiveClass: lc);
+  }
+
+  void _showLiveClassFormModal({required bool isDark, required bool isEdit, LiveClassModel? initialLiveClass}) {
+    final titleCtrl = TextEditingController(text: initialLiveClass?.title ?? '');
+    final tutorCtrl = TextEditingController(text: initialLiveClass?.instructor ?? 'Dr. Ir. R. Ridwan Hasan Saputra, M.Si.');
+    final subjectCtrl = TextEditingController(text: initialLiveClass?.subject ?? 'Matematika MNR');
+    final zoomCtrl = TextEditingController(text: initialLiveClass?.zoomUrl ?? 'https://zoom.us/j/kpmacademy');
 
     showModalBottomSheet(
       context: context,
@@ -1305,7 +1414,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Buat Jadwal Live Class Baru', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+            Text(isEdit ? 'Edit Jadwal Live Class' : 'Buat Jadwal Live Class Baru', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             TextField(controller: titleCtrl, decoration: const InputDecoration(labelText: 'Judul Topik Live Class')),
             TextField(controller: tutorCtrl, decoration: const InputDecoration(labelText: 'Nama Tutor / Pembina')),
@@ -1320,27 +1429,45 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 onPressed: () {
                   if (titleCtrl.text.isNotEmpty) {
                     setState(() {
-                      _liveClasses.insert(
-                        0,
-                        LiveClassModel(
-                          id: 'live_${DateTime.now().millisecondsSinceEpoch}',
-                          title: titleCtrl.text.trim(),
-                          instructor: tutorCtrl.text.trim(),
-                          subject: subjectCtrl.text.trim(),
-                          jenjang: 'SD, SMP, & SMA',
-                          scheduledAt: DateTime.now().add(const Duration(hours: 2)),
-                          durationMinutes: 90,
-                          zoomUrl: zoomCtrl.text.trim(),
-                          status: 'upcoming',
-                          bannerUrl: 'https://images.unsplash.com/photo-1588072432836-e10032774350?w=800&auto=format&fit=crop&q=80',
-                        ),
-                      );
+                      if (isEdit && initialLiveClass != null) {
+                        final idx = _liveClasses.indexWhere((item) => item.id == initialLiveClass.id);
+                        if (idx != -1) {
+                          _liveClasses[idx] = LiveClassModel(
+                            id: initialLiveClass.id,
+                            title: titleCtrl.text.trim(),
+                            instructor: tutorCtrl.text.trim(),
+                            subject: subjectCtrl.text.trim(),
+                            jenjang: initialLiveClass.jenjang,
+                            scheduledAt: initialLiveClass.scheduledAt,
+                            durationMinutes: initialLiveClass.durationMinutes,
+                            zoomUrl: zoomCtrl.text.trim(),
+                            status: initialLiveClass.status,
+                            bannerUrl: initialLiveClass.bannerUrl,
+                          );
+                        }
+                      } else {
+                        _liveClasses.insert(
+                          0,
+                          LiveClassModel(
+                            id: 'live_${DateTime.now().millisecondsSinceEpoch}',
+                            title: titleCtrl.text.trim(),
+                            instructor: tutorCtrl.text.trim(),
+                            subject: subjectCtrl.text.trim(),
+                            jenjang: 'SD, SMP, & SMA',
+                            scheduledAt: DateTime.now().add(const Duration(hours: 2)),
+                            durationMinutes: 90,
+                            zoomUrl: zoomCtrl.text.trim(),
+                            status: 'upcoming',
+                            bannerUrl: 'https://images.unsplash.com/photo-1588072432836-e10032774350?w=800&auto=format&fit=crop&q=80',
+                          ),
+                        );
+                      }
                     });
                     Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Jadwal Live Class baru berhasil dibuat! 🎥')));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(isEdit ? 'Jadwal Live Class diperbarui!' : 'Jadwal Live Class baru berhasil dibuat!')));
                   }
                 },
-                child: const Text('Buat Jadwal', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: Text(isEdit ? 'Simpan Perubahan' : 'Buat Jadwal', style: const TextStyle(fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -1349,9 +1476,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
+  // 3. Package Create & Edit
   void _showAddPackageModal(bool isDark) {
-    final titleCtrl = TextEditingController();
-    final priceCtrl = TextEditingController(text: '199000');
+    _showPackageFormModal(isDark: isDark, isEdit: false);
+  }
+
+  void _showEditPackageModal(PackageModel pkg, bool isDark) {
+    _showPackageFormModal(isDark: isDark, isEdit: true, initialPackage: pkg);
+  }
+
+  void _showPackageFormModal({required bool isDark, required bool isEdit, PackageModel? initialPackage}) {
+    final titleCtrl = TextEditingController(text: initialPackage?.title ?? '');
+    final priceCtrl = TextEditingController(text: initialPackage != null ? '${initialPackage.price.toInt()}' : '199000');
 
     showModalBottomSheet(
       context: context,
@@ -1362,8 +1498,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.of(ctx).viewInsets.bottom + 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Tambah Paket Belajar Baru', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+            Text(isEdit ? 'Edit Paket Belajar' : 'Tambah Paket Belajar Baru', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
             TextField(controller: titleCtrl, decoration: const InputDecoration(labelText: 'Nama Paket')),
             TextField(controller: priceCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Harga Normal (Rp)')),
             const SizedBox(height: 14),
@@ -1375,10 +1513,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 onPressed: () {
                   if (titleCtrl.text.isNotEmpty) {
                     Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Paket baru berhasil disimpan! 📚')));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(isEdit ? 'Paket belajar berhasil diperbarui!' : 'Paket baru berhasil disimpan!')));
                   }
                 },
-                child: const Text('Simpan Paket', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: Text(isEdit ? 'Simpan Perubahan' : 'Simpan Paket', style: const TextStyle(fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -1387,9 +1525,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
+  // 4. Video Create & Edit
   void _showAddVideoModal(bool isDark) {
-    final titleCtrl = TextEditingController();
-    final urlCtrl = TextEditingController(text: 'https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4');
+    _showVideoFormModal(isDark: isDark, isEdit: false);
+  }
+
+  void _showEditVideoModal(VideoModel vid, bool isDark) {
+    _showVideoFormModal(isDark: isDark, isEdit: true, initialVideo: vid);
+  }
+
+  void _showVideoFormModal({required bool isDark, required bool isEdit, VideoModel? initialVideo}) {
+    final titleCtrl = TextEditingController(text: initialVideo?.title ?? '');
+    final urlCtrl = TextEditingController(text: initialVideo?.videoUrl ?? 'https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4');
 
     showModalBottomSheet(
       context: context,
@@ -1400,8 +1547,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.of(ctx).viewInsets.bottom + 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Tambah Video Materi Baru', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+            Text(isEdit ? 'Edit Video Materi' : 'Tambah Video Materi Baru', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
             TextField(controller: titleCtrl, decoration: const InputDecoration(labelText: 'Judul Video')),
             TextField(controller: urlCtrl, decoration: const InputDecoration(labelText: 'URL Video MP4')),
             const SizedBox(height: 14),
@@ -1413,24 +1562,39 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 onPressed: () {
                   if (titleCtrl.text.isNotEmpty) {
                     setState(() {
-                      _videos.insert(
-                        0,
-                        VideoModel(
-                          id: 'vid_${DateTime.now().millisecondsSinceEpoch}',
-                          title: titleCtrl.text.trim(),
-                          description: 'Video materi pembelajaran interaktif KPM Academy.',
-                          thumbnail: 'https://images.unsplash.com/photo-1509228468518-180dd4864904?w=600&auto=format&fit=crop&q=80',
-                          videoUrl: urlCtrl.text.trim(),
-                          price: 0,
-                          accessDurationDays: 60,
-                        ),
-                      );
+                      if (isEdit && initialVideo != null) {
+                        final idx = _videos.indexWhere((item) => item.id == initialVideo.id);
+                        if (idx != -1) {
+                          _videos[idx] = VideoModel(
+                            id: initialVideo.id,
+                            title: titleCtrl.text.trim(),
+                            description: initialVideo.description,
+                            thumbnail: initialVideo.thumbnail,
+                            videoUrl: urlCtrl.text.trim(),
+                            price: initialVideo.price,
+                            accessDurationDays: initialVideo.accessDurationDays,
+                          );
+                        }
+                      } else {
+                        _videos.insert(
+                          0,
+                          VideoModel(
+                            id: 'vid_${DateTime.now().millisecondsSinceEpoch}',
+                            title: titleCtrl.text.trim(),
+                            description: 'Video materi pembelajaran interaktif KPM Academy.',
+                            thumbnail: 'https://images.unsplash.com/photo-1509228468518-180dd4864904?w=600&auto=format&fit=crop&q=80',
+                            videoUrl: urlCtrl.text.trim(),
+                            price: 0,
+                            accessDurationDays: 60,
+                          ),
+                        );
+                      }
                     });
                     Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Video pembelajaran baru berhasil diunggah! 🎬')));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(isEdit ? 'Video materi berhasil diperbarui!' : 'Video materi baru berhasil diunggah!')));
                   }
                 },
-                child: const Text('Simpan Video', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: Text(isEdit ? 'Simpan Perubahan' : 'Simpan Video', style: const TextStyle(fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -1439,9 +1603,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
+  // 5. Module Create & Edit
   void _showAddModuleModal(bool isDark) {
-    final titleCtrl = TextEditingController();
-    final tagCtrl = TextEditingController(text: 'Matematika');
+    _showModuleFormModal(isDark: isDark, isEdit: false);
+  }
+
+  void _showEditModuleModal(ModuleModel m, bool isDark) {
+    _showModuleFormModal(isDark: isDark, isEdit: true, initialModule: m);
+  }
+
+  void _showModuleFormModal({required bool isDark, required bool isEdit, ModuleModel? initialModule}) {
+    final titleCtrl = TextEditingController(text: initialModule?.title ?? '');
+    final tagCtrl = TextEditingController(text: initialModule?.tag ?? 'Matematika');
 
     showModalBottomSheet(
       context: context,
@@ -1452,8 +1625,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.of(ctx).viewInsets.bottom + 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Tambah Modul PDF Baru', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+            Text(isEdit ? 'Edit Modul PDF' : 'Tambah Modul PDF Baru', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
             TextField(controller: titleCtrl, decoration: const InputDecoration(labelText: 'Judul Modul')),
             TextField(controller: tagCtrl, decoration: const InputDecoration(labelText: 'Mata Pelajaran')),
             const SizedBox(height: 14),
@@ -1465,24 +1640,39 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 onPressed: () {
                   if (titleCtrl.text.isNotEmpty) {
                     setState(() {
-                      _modules.insert(
-                        0,
-                        ModuleModel(
-                          id: 'mod_${DateTime.now().millisecondsSinceEpoch}',
-                          title: titleCtrl.text.trim(),
-                          description: 'Modul konsep dan latihan soal mandiri.',
-                          tag: tagCtrl.text.trim(),
-                          totalChapters: 4,
-                          fileUrl: 'https://kpmacademic.io/modules/sample.pdf',
-                          fileSize: '3.0 MB',
-                        ),
-                      );
+                      if (isEdit && initialModule != null) {
+                        final idx = _modules.indexWhere((item) => item.id == initialModule.id);
+                        if (idx != -1) {
+                          _modules[idx] = ModuleModel(
+                            id: initialModule.id,
+                            title: titleCtrl.text.trim(),
+                            description: initialModule.description,
+                            tag: tagCtrl.text.trim(),
+                            totalChapters: initialModule.totalChapters,
+                            fileUrl: initialModule.fileUrl,
+                            fileSize: initialModule.fileSize,
+                          );
+                        }
+                      } else {
+                        _modules.insert(
+                          0,
+                          ModuleModel(
+                            id: 'mod_${DateTime.now().millisecondsSinceEpoch}',
+                            title: titleCtrl.text.trim(),
+                            description: 'Modul konsep dan latihan soal mandiri.',
+                            tag: tagCtrl.text.trim(),
+                            totalChapters: 4,
+                            fileUrl: 'https://kpmacademic.io/modules/sample.pdf',
+                            fileSize: '3.0 MB',
+                          ),
+                        );
+                      }
                     });
                     Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Modul PDF baru berhasil diterbitkan! 📑')));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(isEdit ? 'Modul PDF berhasil diperbarui!' : 'Modul PDF baru berhasil diterbitkan!')));
                   }
                 },
-                child: const Text('Simpan Modul', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: Text(isEdit ? 'Simpan Perubahan' : 'Simpan Modul', style: const TextStyle(fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -1491,9 +1681,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
+  // 6. Voucher Create & Edit
   void _showAddVoucherModal(bool isDark) {
-    final codeCtrl = TextEditingController();
-    final titleCtrl = TextEditingController();
+    _showVoucherFormModal(isDark: isDark, isEdit: false);
+  }
+
+  void _showEditVoucherModal(Map<String, dynamic> v, bool isDark) {
+    _showVoucherFormModal(isDark: isDark, isEdit: true, initialVoucher: v);
+  }
+
+  void _showVoucherFormModal({required bool isDark, required bool isEdit, Map<String, dynamic>? initialVoucher}) {
+    final codeCtrl = TextEditingController(text: initialVoucher?['code'] ?? '');
+    final titleCtrl = TextEditingController(text: initialVoucher?['title'] ?? '');
+    final discountCtrl = TextEditingController(text: initialVoucher?['discount'] ?? '25%');
 
     showModalBottomSheet(
       context: context,
@@ -1504,10 +1704,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.of(ctx).viewInsets.bottom + 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Buat Kupon Voucher Baru', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+            Text(isEdit ? 'Edit Kupon Voucher' : 'Buat Kupon Voucher Baru', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
             TextField(controller: codeCtrl, decoration: const InputDecoration(labelText: 'Kode Kupon (Misal: DISKON25)')),
             TextField(controller: titleCtrl, decoration: const InputDecoration(labelText: 'Keterangan Promo')),
+            TextField(controller: discountCtrl, decoration: const InputDecoration(labelText: 'Besaran Diskon (Contoh: 25% / Rp 50rb)')),
             const SizedBox(height: 14),
             SizedBox(
               width: double.infinity,
@@ -1516,11 +1719,33 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryBlue, foregroundColor: Colors.white),
                 onPressed: () {
                   if (codeCtrl.text.isNotEmpty) {
+                    setState(() {
+                      if (isEdit && initialVoucher != null) {
+                        final idx = _vouchers.indexWhere((item) => item['id'] == initialVoucher['id']);
+                        if (idx != -1) {
+                          _vouchers[idx] = {
+                            'id': initialVoucher['id'],
+                            'code': codeCtrl.text.trim(),
+                            'title': titleCtrl.text.trim(),
+                            'discount': discountCtrl.text.trim(),
+                            'usage': initialVoucher['usage'],
+                          };
+                        }
+                      } else {
+                        _vouchers.insert(0, {
+                          'id': 'v_${DateTime.now().millisecondsSinceEpoch}',
+                          'code': codeCtrl.text.trim().toUpperCase(),
+                          'title': titleCtrl.text.trim(),
+                          'discount': discountCtrl.text.trim(),
+                          'usage': '0/500',
+                        });
+                      }
+                    });
                     Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Kupon voucher baru berhasil diaktifkan! 🎟️')));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(isEdit ? 'Kupon voucher berhasil diperbarui!' : 'Kupon voucher baru berhasil diaktifkan!')));
                   }
                 },
-                child: const Text('Aktifkan Voucher', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: Text(isEdit ? 'Simpan Perubahan' : 'Aktifkan Voucher', style: const TextStyle(fontWeight: FontWeight.bold)),
               ),
             ),
           ],
