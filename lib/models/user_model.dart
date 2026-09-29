@@ -46,6 +46,9 @@ class UserModel {
   // Grade/Class display convenience getter
   String get gradeLevel => studentClass ?? (studentMajor != null ? '$studentClass $studentMajor' : 'Kelas Siswa');
 
+  // Admin role convenience getter
+  bool get isAdmin => role.toLowerCase() == 'admin' || email.trim().toLowerCase() == 'admin@kpmacademy.com';
+
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: json['id']?.toString() ?? '',

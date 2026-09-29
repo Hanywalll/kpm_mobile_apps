@@ -9,6 +9,7 @@ import '../../models/live_class_model.dart';
 import '../../models/module_model.dart';
 import '../../models/package_model.dart';
 import '../../models/video_model.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/package_provider.dart';
 import '../../services/admin_service.dart';
 import '../../services/dashboard_service.dart';
@@ -71,7 +72,84 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    if (!authProvider.isAdmin) {
+      return Scaffold(
+        backgroundColor: isDark ? AppTheme.darkBackgroundColor : AppTheme.backgroundColor,
+        appBar: AppBar(
+          leading: AppTheme.backButton(context),
+          title: const Text('Akses Ditolak'),
+          centerTitle: true,
+        ),
+        body: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(28.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.admin_panel_settings_outlined, size: 72, color: Colors.redAccent),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Akses Khusus Administrator',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  authProvider.isAuthenticated
+                      ? 'Akun Anda (${authProvider.user?.email}) terdaftar sebagai Siswa dan tidak memiliki izin Administrator untuk mengakses halaman CMS ini.'
+                      : 'Halaman ini dilindungi dan hanya dapat diakses setelah melakukan login dengan akun Administrator KPM Academy.',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppTheme.textSecondary,
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 28),
+                if (!authProvider.isAuthenticated)
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryBlue,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      elevation: 2,
+                    ),
+                    icon: const Icon(Icons.login_rounded, size: 20),
+                    label: const Text('Login Akun Admin', style: TextStyle(fontWeight: FontWeight.bold)),
+                    onPressed: () => Navigator.pushNamed(context, '/login'),
+                  ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                  label: const Text('Kembali ke Beranda'),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: isDark ? AppTheme.darkBackgroundColor : AppTheme.backgroundColor,

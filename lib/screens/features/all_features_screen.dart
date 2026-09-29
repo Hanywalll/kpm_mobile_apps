@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../providers/auth_provider.dart';
 
 class AllFeaturesScreen extends StatefulWidget {
   const AllFeaturesScreen({super.key});
@@ -231,6 +233,7 @@ class _AllFeaturesScreenState extends State<AllFeaturesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final query = _searchQuery.trim().toLowerCase();
 
@@ -290,6 +293,9 @@ class _AllFeaturesScreenState extends State<AllFeaturesScreen> {
             ..._featureCategories.map((cat) {
               final List<Map<String, dynamic>> items = (cat['items'] as List<Map<String, dynamic>>)
                   .where((item) {
+                    if (item['route'] == '/admin_dashboard' && !authProvider.isAdmin) {
+                      return false;
+                    }
                     if (query.isEmpty) return true;
                     final title = (item['title'] as String).toLowerCase();
                     return title.contains(query);

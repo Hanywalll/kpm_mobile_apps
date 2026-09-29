@@ -31,6 +31,7 @@ class AuthProvider with ChangeNotifier {
   AuthState get state => _state;
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _state == AuthState.authenticated && _user != null;
+  bool get isAdmin => isAuthenticated && (_user?.isAdmin ?? false);
 
   Future<void> initAuth() async {
     // 1. First restore cached user data for instant UI rendering
