@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../providers/auth_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -37,7 +39,12 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
     _redirectTimer = Timer(const Duration(milliseconds: 1500), () {
       if (mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        if (authProvider.isAdmin) {
+          Navigator.pushReplacementNamed(context, '/admin_dashboard');
+        } else {
+          Navigator.pushReplacementNamed(context, '/home');
+        }
       }
     });
   }

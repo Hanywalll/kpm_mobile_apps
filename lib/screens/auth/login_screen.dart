@@ -40,6 +40,11 @@ class _LoginScreenState extends State<LoginScreen> {
           practiceProvider.fetchHistory();
         } catch (_) {}
 
+        if (authProvider.isAdmin) {
+          Navigator.pushNamedAndRemoveUntil(context, '/admin_dashboard', (route) => false);
+          return;
+        }
+
         if (Navigator.canPop(context)) {
           Navigator.pop(context, true);
         } else {
@@ -60,6 +65,10 @@ class _LoginScreenState extends State<LoginScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success = await authProvider.loginWithGoogle();
     if (success && mounted) {
+      if (authProvider.isAdmin) {
+        Navigator.pushNamedAndRemoveUntil(context, '/admin_dashboard', (route) => false);
+        return;
+      }
       if (Navigator.canPop(context)) {
         Navigator.pop(context, true);
       } else {

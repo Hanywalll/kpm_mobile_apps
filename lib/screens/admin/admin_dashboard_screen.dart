@@ -154,13 +154,48 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     return Scaffold(
       backgroundColor: isDark ? AppTheme.darkBackgroundColor : AppTheme.backgroundColor,
       appBar: AppBar(
-        leading: AppTheme.backButton(context),
-        title: const Text('Admin CMS & Control Panel'),
+        leading: Navigator.canPop(context)
+            ? AppTheme.backButton(context)
+            : Container(
+                margin: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.admin_panel_settings_rounded, color: AppTheme.primaryBlue),
+              ),
+        title: Row(
+          children: [
+            const Text('Panel CMS Admin'),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade700,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Text(
+                'LIVE',
+                style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.visibility_outlined),
+            tooltip: 'Tinjau Tampilan Siswa',
+            onPressed: () => Navigator.pushNamed(context, '/home'),
+          ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             onPressed: _loadAllAdminData,
             tooltip: 'Refresh Data',
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
+            tooltip: 'Logout Admin',
+            onPressed: () => _confirmLogout(context, authProvider),
           ),
         ],
         bottom: PreferredSize(
@@ -202,6 +237,47 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
                 ),
               ],
             ),
+    );
+  }
+
+  void _confirmLogout(BuildContext context, AuthProvider authProvider) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.logout_rounded, color: Colors.redAccent),
+            SizedBox(width: 10),
+            Text('Logout Admin', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: const Text(
+          'Apakah Anda yakin ingin keluar dari sesi Administrator KPM Academy?',
+          style: TextStyle(fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await authProvider.logout();
+              if (context.mounted) {
+                Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+              }
+            },
+            child: const Text('Keluar'),
+          ),
+        ],
+      ),
     );
   }
 
