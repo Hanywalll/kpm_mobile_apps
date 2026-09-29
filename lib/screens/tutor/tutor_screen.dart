@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../services/tutor_service.dart';
+import '../../widgets/auth_guard_bottom_sheet.dart';
 
 class TutorScreen extends StatefulWidget {
   const TutorScreen({super.key});
@@ -176,12 +179,36 @@ class _TutorScreenState extends State<TutorScreen> with SingleTickerProviderStat
                 ),
                 onPressed: () {
                   Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Permintaan konsultasi dengan ${tutor['name']} telah dikirim! 🚀'),
-                      backgroundColor: AppTheme.accentGreen,
-                      behavior: SnackBarBehavior.floating,
-                    ),
+                  AuthGuard.check(
+                    context,
+                    featureName: 'Booking Tutor Privat',
+                    onAuthenticated: () async {
+                      try {
+                        final tutorService = Provider.of<TutorService>(context, listen: false);
+                        await tutorService.bookTutorSchedule(
+                          tutorId: tutor['id'] ?? 'tut_1',
+                          scheduledDate: DateTime.now().add(const Duration(days: 1)).toString().substring(0, 10),
+                          scheduledTimeSlot: '19:30 - 21:00',
+                          subject: tutor['role'] ?? 'Matematika & Sains',
+                          notes: 'Sesi konsultasi les privat',
+                        );
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Jadwal les privat dengan ${tutor['name']} berhasil dipesan! Tautan Zoom telah dibuat. 🚀'),
+                              backgroundColor: AppTheme.accentGreen,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Status booking: $e')),
+                          );
+                        }
+                      }
+                    },
                   );
                 },
                 child: const Text('Konfirmasi & Hubungkan Tutor', style: TextStyle(fontWeight: FontWeight.bold)),
