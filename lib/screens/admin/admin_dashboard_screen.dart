@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
@@ -583,15 +584,60 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   // =========================================================================
-  // TAB 2: TRANSAKSI & PESANAN
+  // TAB 2: TRANSAKSI & PESANAN (With Full E-Voucher & Receipt View)
   // =========================================================================
   Widget _buildOrdersAndTransactionsTab(bool isDark) {
     final currencyFormatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
     final mockOrders = [
-      {'id': 'ORD-2026-9812', 'student': 'Ahmad Fauzan', 'package': 'Paket Intensif SNBT 2026', 'amount': 129000, 'status': 'PAID', 'date': '29 Sep 2026, 10:14'},
-      {'id': 'ORD-2026-9811', 'student': 'Siti Nurhaliza', 'package': 'Tryout UTBK TPS & Literasi', 'amount': 75000, 'status': 'PAID', 'date': '29 Sep 2026, 09:30'},
-      {'id': 'ORD-2026-9810', 'student': 'Budi Santoso', 'package': 'Mastering Penalaran MNR', 'amount': 199000, 'status': 'PAID', 'date': '28 Sep 2026, 21:05'},
+      {
+        'id': 'ORD-2026-9812',
+        'student': 'Ahmad Fauzan',
+        'school': 'SMA Negeri 1 Jakarta',
+        'phone': '0812-9876-5432',
+        'package': 'Paket Intensif SNBT 2026',
+        'originalAmount': 154000,
+        'discountAmount': 25000,
+        'voucherCode': 'KPMJUARA2026',
+        'enrollKey': 'ENROLL-SNBT-9812-VIP',
+        'amount': 129000,
+        'status': 'PAID',
+        'paymentMethod': 'Midtrans QRIS / GoPay',
+        'date': '29 Sep 2026, 10:14 WIB',
+        'accessDuration': '180 Hari Aktif',
+      },
+      {
+        'id': 'ORD-2026-9811',
+        'student': 'Siti Nurhaliza',
+        'school': 'SMA Negeri 3 Surabaya',
+        'phone': '0857-1234-5678',
+        'package': 'Tryout UTBK TPS & Literasi',
+        'originalAmount': 100000,
+        'discountAmount': 25000,
+        'voucherCode': 'MNRINDONESIA',
+        'enrollKey': 'ENROLL-TPS-9811-PRO',
+        'amount': 75000,
+        'status': 'PAID',
+        'paymentMethod': 'Virtual Account BCA',
+        'date': '29 Sep 2026, 09:30 WIB',
+        'accessDuration': '90 Hari Aktif',
+      },
+      {
+        'id': 'ORD-2026-9810',
+        'student': 'Budi Santoso',
+        'school': 'SMA Negeri 8 Bandung',
+        'phone': '0813-8888-9999',
+        'package': 'Mastering Penalaran MNR',
+        'originalAmount': 199000,
+        'discountAmount': 0,
+        'voucherCode': null,
+        'enrollKey': 'ENROLL-MNR-9810-FULL',
+        'amount': 199000,
+        'status': 'PAID',
+        'paymentMethod': 'Virtual Account Mandiri',
+        'date': '28 Sep 2026, 21:05 WIB',
+        'accessDuration': '365 Hari Aktif',
+      },
     ];
 
     return SingleChildScrollView(
@@ -603,7 +649,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Daftar Transaksi Siswa Masuk', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary)),
+              Text(
+                'Daftar Transaksi & E-Voucher Siswa',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary),
+              ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
@@ -611,45 +660,304 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
             ],
           ),
+          const SizedBox(height: 4),
+          Text(
+            'Ketuk pesanan untuk melihat bukti kwitansi, rincian potongan kupon & Enroll Key.',
+            style: TextStyle(fontSize: 10, color: isDark ? AppTheme.darkTextMuted : AppTheme.textMuted),
+          ),
           const SizedBox(height: 12),
           ...mockOrders.map((ord) {
-            return Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: isDark ? AppTheme.darkCardColor : Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: isDark ? AppTheme.darkBorderColor : AppTheme.borderColor),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(ord['id'] as String, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: AppTheme.primaryBlue)),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
-                        child: Text(ord['status'] as String, style: const TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
+            final hasVoucher = ord['voucherCode'] != null;
+
+            return InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: () => _showOrderVoucherReceiptModal(ord, isDark),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: isDark ? AppTheme.darkCardColor : Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: isDark ? AppTheme.darkBorderColor : AppTheme.borderColor),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Text(ord['id'] as String, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: AppTheme.primaryBlue)),
+                            const SizedBox(width: 8),
+                            if (hasVoucher)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(color: const Color(0xFFEC4899).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
+                                child: Text('Kupon: ${ord['voucherCode']}', style: const TextStyle(color: Color(0xFFEC4899), fontSize: 9, fontWeight: FontWeight.bold)),
+                              ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
+                          child: Text(ord['status'] as String, style: const TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(ord['student'] as String, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary)),
+                    const SizedBox(height: 1),
+                    Text('${ord['package']} • ${ord['school']}', style: TextStyle(fontSize: 11, color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary)),
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(color: isDark ? Colors.black26 : const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(6)),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.vpn_key_outlined, size: 12, color: AppTheme.primaryBlue),
+                          const SizedBox(width: 6),
+                          Text('Enroll Key: ${ord['enrollKey']}', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppTheme.primaryBlue)),
+                        ],
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(ord['student'] as String, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary)),
-                  Text(ord['package'] as String, style: TextStyle(fontSize: 11, color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary)),
-                  const Divider(height: 14),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(ord['date'] as String, style: TextStyle(fontSize: 10, color: isDark ? AppTheme.darkTextMuted : AppTheme.textMuted)),
-                      Text(currencyFormatter.format(ord['amount']), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF059669))),
-                    ],
-                  ),
-                ],
+                    ),
+                    const Divider(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(ord['date'] as String, style: TextStyle(fontSize: 10, color: isDark ? AppTheme.darkTextMuted : AppTheme.textMuted)),
+                        Row(
+                          children: [
+                            Text(currencyFormatter.format(ord['amount']), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF059669))),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(color: AppTheme.primaryBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.receipt_outlined, size: 12, color: AppTheme.primaryBlue),
+                                  SizedBox(width: 4),
+                                  Text('Lihat Voucher', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             );
           }),
+        ],
+      ),
+    );
+  }
+
+  // --- E-Voucher & Receipt Digital Sheet Modal ---
+  void _showOrderVoucherReceiptModal(Map<String, dynamic> ord, bool isDark) {
+    final currencyFormatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: isDark ? AppTheme.darkCardColor : Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // Voucher Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(color: AppTheme.primaryBlue.withValues(alpha: 0.1), shape: BoxShape.circle),
+                        child: const Icon(Icons.confirmation_number_outlined, color: AppTheme.primaryBlue, size: 20),
+                      ),
+                      const SizedBox(width: 10),
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('E-Voucher & Kwitansi Resmi', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                          Text('KPM Academy Payment Verification', style: TextStyle(fontSize: 10, color: AppTheme.textSecondary)),
+                        ],
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
+                    child: const Text('LUNAS / PAID', style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              // Voucher Ticket / Enroll Key Card
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: isDark
+                        ? [const Color(0xFF1E1B4B), const Color(0xFF312E81)]
+                        : [const Color(0xFF1E3A8A), const Color(0xFF3B82F6)],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(color: AppTheme.primaryBlue.withValues(alpha: 0.2), blurRadius: 10, offset: const Offset(0, 4)),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('KODE ENROLLMENT / E-VOUCHER AKSES', style: TextStyle(color: Colors.white70, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1.1)),
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            ord['enrollKey'] as String,
+                            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 1.2),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.copy_rounded, color: Colors.white, size: 18),
+                          tooltip: 'Salin Key',
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: ord['enrollKey'] as String));
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enroll Key disalin ke clipboard!')));
+                          },
+                        ),
+                      ],
+                    ),
+                    const Divider(color: Colors.white24, height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Masa Akses: ${ord['accessDuration']}', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
+                        Text('Order: ${ord['id']}', style: const TextStyle(color: Colors.white70, fontSize: 10)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Rincian Pembeli & Siswa
+              Text('Data Siswa & Pembeli', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary)),
+              const SizedBox(height: 6),
+              _buildReceiptRow('Nama Siswa', ord['student'] as String, isDark),
+              _buildReceiptRow('Sekolah', ord['school'] as String, isDark),
+              _buildReceiptRow('WhatsApp', ord['phone'] as String, isDark),
+              _buildReceiptRow('Paket Belajar', ord['package'] as String, isDark),
+
+              const Divider(height: 20),
+
+              // Rincian Biaya & Kupon
+              Text('Rincian Pembayaran', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary)),
+              const SizedBox(height: 6),
+              _buildReceiptRow('Harga Paket Normal', currencyFormatter.format(ord['originalAmount']), isDark),
+              if (ord['voucherCode'] != null)
+                _buildReceiptRow('Potongan Kupon (${ord['voucherCode']})', '-${currencyFormatter.format(ord['discountAmount'])}', isDark, isHighlight: true),
+              _buildReceiptRow('Metode Pembayaran', ord['paymentMethod'] as String, isDark),
+              _buildReceiptRow('Waktu Transaksi', ord['date'] as String, isDark),
+
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(color: const Color(0xFF10B981).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Total Pembayaran Bersih', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF059669))),
+                    Text(currencyFormatter.format(ord['amount']), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Color(0xFF059669))),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Action Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      icon: const Icon(Icons.copy_rounded, size: 16),
+                      label: const Text('Salin Key', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: ord['enrollKey'] as String));
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enroll Key berhasil disalin!')));
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryBlue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      icon: const Icon(Icons.send_rounded, size: 16),
+                      label: const Text('Kirim ke Siswa', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Kwitansi & Enroll Key dikirim ulang ke ${ord['student']}!')));
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReceiptRow(String label, String value, bool isDark, {bool isHighlight = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(fontSize: 11, color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary)),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: isHighlight ? const Color(0xFFEC4899) : (isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary),
+            ),
+          ),
         ],
       ),
     );
