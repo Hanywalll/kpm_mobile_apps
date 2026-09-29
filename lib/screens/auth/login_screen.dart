@@ -181,73 +181,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _emailController.text = 'siswa@kpm.com';
-                              _passwordController.text = 'Password123!';
-                            });
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Akun Siswa Demo diterapkan! Siap masuk.'),
-                                backgroundColor: AppTheme.primaryBlue,
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: AppTheme.primaryBlue.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: AppTheme.primaryBlue.withValues(alpha: 0.3)),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(6),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.primaryBlue.withValues(alpha: 0.15),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(Icons.verified_user_rounded, color: AppTheme.primaryBlue, size: 20),
-                                ),
-                                const SizedBox(width: 10),
-                                const Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Akun Demo Siap Pakai (Database Aktif):',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold,
-                                          color: AppTheme.primaryBlue,
-                                        ),
-                                      ),
-                                      SizedBox(height: 2),
-                                      Text(
-                                        'Email: siswa@kpm.com | Pass: Password123!',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppTheme.textPrimary,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const Icon(Icons.touch_app_rounded, size: 18, color: AppTheme.primaryBlue),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 18),
                         TextFormField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
                           decoration: InputDecoration(
-                            labelText: 'Email Siswa',
+                            labelText: 'Email Akun',
+                            hintText: 'nama@email.com',
                             prefixIcon: const Icon(Icons.email_outlined, color: AppTheme.primaryBlue),
                             filled: true,
                             fillColor: const Color(0xFFF8F9FA),
@@ -281,9 +220,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           validator: (val) => val == null || val.length < 6 ? 'Password min. 6 karakter' : null,
                         ),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 16),
                         PrimaryButton(
-                          text: 'Masuk Sekarang 🚀',
+                          text: 'Masuk Sekarang',
                           isLoading: authProvider.state == AuthState.loading,
                           onPressed: _handleLogin,
                         ),
@@ -311,6 +250,157 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: AppTheme.primaryBlue,
+        foregroundColor: Colors.white,
+        elevation: 4,
+        shape: const CircleBorder(),
+        tooltip: 'Bantuan Akun Demo & Uji Coba',
+        onPressed: () => _showDemoAccountsModal(context),
+        child: const Icon(Icons.question_mark_rounded, size: 24),
+      ),
+    );
+  }
+
+  void _showDemoAccountsModal(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? AppTheme.darkCardColor : Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.key_rounded, color: AppTheme.primaryBlue, size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Akun Demo Siap Pakai', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        Text('Ketuk salah satu akun untuk langsung mengisi form login.', style: TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+
+              // 1. Akun Siswa Demo
+              InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () {
+                  setState(() {
+                    _emailController.text = 'siswa@kpm.com';
+                    _passwordController.text = 'Password123!';
+                  });
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Akun Siswa diterapkan (siswa@kpm.com). Silakan Masuk! 🎓'),
+                      backgroundColor: AppTheme.primaryBlue,
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2563EB).withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFF2563EB).withValues(alpha: 0.25)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(color: const Color(0xFF2563EB).withValues(alpha: 0.15), shape: BoxShape.circle),
+                        child: const Icon(Icons.school_rounded, color: Color(0xFF2563EB), size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Akun Siswa KPM (User)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF2563EB))),
+                            SizedBox(height: 2),
+                            Text('Email: siswa@kpm.com\nPass: Password123!', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Color(0xFF2563EB)),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // 2. Akun Administrator Demo
+              InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () {
+                  setState(() {
+                    _emailController.text = 'admin@kpmacademy.com';
+                    _passwordController.text = 'p@ssw0rd123';
+                  });
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Akun Admin CMS diterapkan (admin@kpmacademy.com). Silakan Masuk! 👑'),
+                      backgroundColor: Color(0xFF4F46E5),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4F46E5).withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFF4F46E5).withValues(alpha: 0.25)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(color: const Color(0xFF4F46E5).withValues(alpha: 0.15), shape: BoxShape.circle),
+                        child: const Icon(Icons.admin_panel_settings_rounded, color: Color(0xFF4F46E5), size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Akun Administrator (CMS)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF4F46E5))),
+                            SizedBox(height: 2),
+                            Text('Email: admin@kpmacademy.com\nPass: p@ssw0rd123', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Color(0xFF4F46E5)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
