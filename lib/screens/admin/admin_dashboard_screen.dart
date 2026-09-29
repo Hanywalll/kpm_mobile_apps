@@ -584,7 +584,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   // =========================================================================
-  // TAB 2: TRANSAKSI & PESANAN (With Full E-Voucher & Receipt View)
+  // TAB 2: TRANSAKSI & PESANAN (With Full Invoice & Voucher Receipt View)
   // =========================================================================
   Widget _buildOrdersAndTransactionsTab(bool isDark) {
     final currencyFormatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
@@ -599,7 +599,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         'originalAmount': 154000,
         'discountAmount': 25000,
         'voucherCode': 'KPMJUARA2026',
-        'enrollKey': 'ENROLL-SNBT-9812-VIP',
         'amount': 129000,
         'status': 'PAID',
         'paymentMethod': 'Midtrans QRIS / GoPay',
@@ -615,7 +614,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         'originalAmount': 100000,
         'discountAmount': 25000,
         'voucherCode': 'MNRINDONESIA',
-        'enrollKey': 'ENROLL-TPS-9811-PRO',
         'amount': 75000,
         'status': 'PAID',
         'paymentMethod': 'Virtual Account BCA',
@@ -631,7 +629,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         'originalAmount': 199000,
         'discountAmount': 0,
         'voucherCode': null,
-        'enrollKey': 'ENROLL-MNR-9810-FULL',
         'amount': 199000,
         'status': 'PAID',
         'paymentMethod': 'Virtual Account Mandiri',
@@ -650,7 +647,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Daftar Transaksi & E-Voucher Siswa',
+                'Daftar Transaksi & Kwitansi Siswa',
                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary),
               ),
               Container(
@@ -662,7 +659,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Ketuk pesanan untuk melihat bukti kwitansi, rincian potongan kupon & Enroll Key.',
+            'Ketuk pesanan untuk melihat bukti kwitansi resmi, rincian potongan kupon & status pembayaran.',
             style: TextStyle(fontSize: 10, color: isDark ? AppTheme.darkTextMuted : AppTheme.textMuted),
           ),
           const SizedBox(height: 12),
@@ -712,13 +709,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     const SizedBox(height: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: isDark ? Colors.black26 : const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(6)),
-                      child: Row(
+                      decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(6)),
+                      child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.vpn_key_outlined, size: 12, color: AppTheme.primaryBlue),
-                          const SizedBox(width: 6),
-                          Text('Enroll Key: ${ord['enrollKey']}', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppTheme.primaryBlue)),
+                          Icon(Icons.check_circle_outline_rounded, size: 12, color: Colors.green),
+                          SizedBox(width: 6),
+                          Text('Akses Belajar Langsung Aktif Otomatis', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.green)),
                         ],
                       ),
                     ),
@@ -739,7 +736,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 children: [
                                   Icon(Icons.receipt_outlined, size: 12, color: AppTheme.primaryBlue),
                                   SizedBox(width: 4),
-                                  Text('Lihat Voucher', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue)),
+                                  Text('Lihat Kwitansi', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue)),
                                 ],
                               ),
                             ),
@@ -782,7 +779,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
               const SizedBox(height: 14),
 
-              // Voucher Header
+              // Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -791,13 +788,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(color: AppTheme.primaryBlue.withValues(alpha: 0.1), shape: BoxShape.circle),
-                        child: const Icon(Icons.confirmation_number_outlined, color: AppTheme.primaryBlue, size: 20),
+                        child: const Icon(Icons.receipt_long_outlined, color: AppTheme.primaryBlue, size: 20),
                       ),
                       const SizedBox(width: 10),
                       const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('E-Voucher & Kwitansi Resmi', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                          Text('Bukti Kwitansi & Pembelian', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                           Text('KPM Academy Payment Verification', style: TextStyle(fontSize: 10, color: AppTheme.textSecondary)),
                         ],
                       ),
@@ -813,7 +810,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
               const SizedBox(height: 16),
 
-              // Voucher Ticket / Enroll Key Card
+              // Invoice Card
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -831,23 +828,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('KODE ENROLLMENT / E-VOUCHER AKSES', style: TextStyle(color: Colors.white70, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1.1)),
+                    const Text('NOMOR INVOICE PESANAN', style: TextStyle(color: Colors.white70, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1.1)),
                     const SizedBox(height: 6),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Flexible(
                           child: Text(
-                            ord['enrollKey'] as String,
+                            ord['id'] as String,
                             style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 1.2),
                           ),
                         ),
                         IconButton(
                           icon: const Icon(Icons.copy_rounded, color: Colors.white, size: 18),
-                          tooltip: 'Salin Key',
+                          tooltip: 'Salin Invoice',
                           onPressed: () {
-                            Clipboard.setData(ClipboardData(text: ord['enrollKey'] as String));
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enroll Key disalin ke clipboard!')));
+                            Clipboard.setData(ClipboardData(text: ord['id'] as String));
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Nomor Invoice disalin ke clipboard!')));
                           },
                         ),
                       ],
@@ -857,7 +854,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text('Masa Akses: ${ord['accessDuration']}', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
-                        Text('Order: ${ord['id']}', style: const TextStyle(color: Colors.white70, fontSize: 10)),
+                        const Row(
+                          children: [
+                            Icon(Icons.check_circle_rounded, color: Color(0xFF4ADE80), size: 14),
+                            SizedBox(width: 4),
+                            Text('Akses Otomatis Aktif', style: TextStyle(color: Color(0xFF4ADE80), fontSize: 10, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
                       ],
                     ),
                   ],
@@ -866,7 +869,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
               const SizedBox(height: 16),
 
-              // Rincian Pembeli & Siswa
+              // Rincian Siswa
               Text('Data Siswa & Pembeli', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary)),
               const SizedBox(height: 6),
               _buildReceiptRow('Nama Siswa', ord['student'] as String, isDark),
@@ -910,10 +913,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       icon: const Icon(Icons.copy_rounded, size: 16),
-                      label: const Text('Salin Key', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      label: const Text('Salin Invoice', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       onPressed: () {
-                        Clipboard.setData(ClipboardData(text: ord['enrollKey'] as String));
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enroll Key berhasil disalin!')));
+                        Clipboard.setData(ClipboardData(text: ord['id'] as String));
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Nomor Invoice berhasil disalin!')));
                       },
                     ),
                   ),
@@ -930,7 +933,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       label: const Text('Kirim ke Siswa', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       onPressed: () {
                         Navigator.pop(ctx);
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Kwitansi & Enroll Key dikirim ulang ke ${ord['student']}!')));
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Kwitansi pembayaran dikirim ulang ke ${ord['student']}!')));
                       },
                     ),
                   ),
