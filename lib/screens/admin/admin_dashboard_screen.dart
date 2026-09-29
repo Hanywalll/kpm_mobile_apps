@@ -683,19 +683,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       },
     ];
 
+    final query = _orderSearchQuery.trim().toLowerCase();
     final filteredOrders = mockOrders.where((ord) {
-      if (_orderSearchQuery.isEmpty) return true;
+      if (query.isEmpty) return true;
       final invoiceId = (ord['id'] as String? ?? '').toLowerCase();
       final student = (ord['student'] as String? ?? '').toLowerCase();
       final school = (ord['school'] as String? ?? '').toLowerCase();
       final package = (ord['package'] as String? ?? '').toLowerCase();
       final voucher = (ord['voucherCode'] as String? ?? '').toLowerCase();
+      final payment = (ord['paymentMethod'] as String? ?? '').toLowerCase();
 
-      return invoiceId.contains(_orderSearchQuery) ||
-          student.contains(_orderSearchQuery) ||
-          school.contains(_orderSearchQuery) ||
-          package.contains(_orderSearchQuery) ||
-          voucher.contains(_orderSearchQuery);
+      return invoiceId.contains(query) ||
+          student.contains(query) ||
+          school.contains(query) ||
+          package.contains(query) ||
+          voucher.contains(query) ||
+          payment.contains(query);
     }).toList();
 
     return SingleChildScrollView(
@@ -734,6 +737,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
             child: TextField(
               controller: _orderSearchController,
+              onChanged: (val) {
+                setState(() {
+                  _orderSearchQuery = val.trim().toLowerCase();
+                });
+              },
               style: TextStyle(fontSize: 13, color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary),
               decoration: InputDecoration(
                 hintText: 'Cari nomor invoice (misal: 9812) atau nama siswa...',
@@ -744,6 +752,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         icon: const Icon(Icons.cancel_rounded, size: 18, color: AppTheme.textMuted),
                         onPressed: () {
                           _orderSearchController.clear();
+                          setState(() {
+                            _orderSearchQuery = '';
+                          });
                         },
                       )
                     : null,
@@ -780,7 +791,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   ),
                   const SizedBox(height: 12),
                   TextButton.icon(
-                    onPressed: () => _orderSearchController.clear(),
+                    onPressed: () {
+                      _orderSearchController.clear();
+                      setState(() {
+                        _orderSearchQuery = '';
+                      });
+                    },
                     icon: const Icon(Icons.clear_all_rounded, size: 16),
                     label: const Text('Reset Pencarian', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                   ),
@@ -1022,30 +1038,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   children: [
                     const Text('Total Pembayaran Bersih', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF059669))),
                     Text(currencyFormatter.format(ord['amount']), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Color(0xFF059669))),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 14),
-
-              // Sync Status Banner
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.cloud_done_rounded, color: AppTheme.primaryBlue, size: 16),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Data transaksi dan hak akses materi/tryout tersimpan otomatis di akun siswa tanpa perlu pengiriman manual.',
-                        style: TextStyle(fontSize: 10, color: AppTheme.primaryBlue, fontWeight: FontWeight.w600),
-                      ),
-                    ),
                   ],
                 ),
               ),
