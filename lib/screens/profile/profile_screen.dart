@@ -715,6 +715,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   try {
                     Provider.of<PracticeProvider>(context, listen: false).reset();
                   } catch (_) {}
+                  try {
+                    Provider.of<PackageProvider>(context, listen: false).clearUserData();
+                  } catch (_) {}
                   await authProvider.logout();
                   if (context.mounted) {
                     Navigator.pushReplacementNamed(context, '/home');

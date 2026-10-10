@@ -8,8 +8,9 @@ import '../services/package_service.dart';
 class PackageProvider with ChangeNotifier {
   final PackageService _packageService;
 
-  static const String _enrolledPrefKey = 'kpm_enrolled_packages_cache';
+  static String _getEnrolledPrefKey(String userId) => 'kpm_enrolled_packages_cache_${userId.isEmpty ? "guest" : userId}';
 
+  String _currentUserId = '';
   List<PackageModel> _packages = [];
   List<PackageModel> _enrolledPackages = [];
   List<OrderModel> _userOrders = [];
@@ -23,6 +24,27 @@ class PackageProvider with ChangeNotifier {
 
   PackageProvider(this._packageService) {
     _loadEnrolledPackagesFromPrefs();
+  }
+
+  void syncWithUser(String? userId) {
+    final newId = userId ?? '';
+    if (_currentUserId != newId) {
+      _currentUserId = newId;
+      _cartItems.clear();
+      _userOrders.clear();
+      _enrolledPackages.clear();
+      _loadEnrolledPackagesFromPrefs();
+      fetchPackages();
+    }
+  }
+
+  void clearUserData() {
+    _currentUserId = '';
+    _cartItems.clear();
+    _userOrders.clear();
+    _enrolledPackages.clear();
+    PackageService.clearCachedOrders();
+    notifyListeners();
   }
 
   @override
@@ -64,10 +86,14 @@ class PackageProvider with ChangeNotifier {
   Future<void> _loadEnrolledPackagesFromPrefs() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final cachedJson = prefs.getString(_enrolledPrefKey);
+      final key = _getEnrolledPrefKey(_currentUserId);
+      final cachedJson = prefs.getString(key);
       if (cachedJson != null && cachedJson.isNotEmpty) {
         final List decoded = jsonDecode(cachedJson);
         _enrolledPackages = decoded.map((e) => PackageModel.fromJson(e)).toList();
+        notifyListeners();
+      } else {
+        _enrolledPackages = [];
         notifyListeners();
       }
     } catch (_) {}
@@ -76,8 +102,9 @@ class PackageProvider with ChangeNotifier {
   Future<void> _saveEnrolledPackagesToPrefs() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      final key = _getEnrolledPrefKey(_currentUserId);
       final listMap = _enrolledPackages.map((e) => e.toJson()).toList();
-      await prefs.setString(_enrolledPrefKey, jsonEncode(listMap));
+      await prefs.setString(key, jsonEncode(listMap));
     } catch (_) {}
   }
 
@@ -238,8 +265,6 @@ class PackageProvider with ChangeNotifier {
     );
     if (matchedOrder.package != null) {
       enrollPackage(matchedOrder.package!);
-    } else if (_enrolledPackages.isEmpty && _packages.isNotEmpty) {
-      enrollPackage(_packages.first);
     }
 
     notifyListeners();
