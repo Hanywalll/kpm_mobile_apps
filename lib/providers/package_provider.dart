@@ -270,6 +270,20 @@ class PackageProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<Map<String, dynamic>?> createMidtransSnapTransaction({
+    required String orderId,
+    required double grossAmount,
+    String? customerName,
+    String? customerEmail,
+  }) {
+    return _packageService.createMidtransSnapTransaction(
+      orderId: orderId,
+      grossAmount: grossAmount,
+      customerName: customerName,
+      customerEmail: customerEmail,
+    );
+  }
+
   Future<bool> checkMidtransStatus(String orderId, String orderNumber) async {
     _isLoading = true;
     notifyListeners();

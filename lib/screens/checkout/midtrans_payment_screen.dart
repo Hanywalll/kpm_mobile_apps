@@ -34,16 +34,39 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
   int _secondsRemaining = 60 * 60; // 60 minutes expiry
 
   late String _vaNumber;
+  String? _liveSnapUrl;
 
   @override
   void initState() {
     super.initState();
+    _liveSnapUrl = widget.order?.paymentUrl;
     final seed = widget.order?.orderNumber ?? widget.order?.id ?? DateTime.now().millisecondsSinceEpoch.toString();
     final cleanSeed = seed.replaceAll(RegExp(r'[^0-9]'), '');
     final paddedSeed = (cleanSeed.length >= 8 ? cleanSeed.substring(cleanSeed.length - 8) : '89201948');
     _vaNumber = '80777$paddedSeed';
 
     _startTimer();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _ensureLiveSnapUrl();
+    });
+  }
+
+  void _ensureLiveSnapUrl() async {
+    if (_liveSnapUrl == null || _liveSnapUrl!.isEmpty || _liveSnapUrl!.contains('demo')) {
+      final packageProvider = Provider.of<PackageProvider>(context, listen: false);
+      final orderNum = widget.order?.orderNumber ?? 'ORD-KPM-${DateTime.now().millisecondsSinceEpoch}';
+      final amount = widget.order?.totalPrice ?? widget.package?.effectivePrice ?? 150000;
+      final snapData = await packageProvider.createMidtransSnapTransaction(
+        orderId: orderNum,
+        grossAmount: amount,
+      );
+      final redUrl = snapData?['redirect_url'] as String?;
+      if (redUrl != null && redUrl.isNotEmpty && mounted) {
+        setState(() {
+          _liveSnapUrl = redUrl;
+        });
+      }
+    }
   }
 
   void _startTimer() {
@@ -293,7 +316,7 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
 
     final double amount = order?.totalPrice ?? pkg?.effectivePrice ?? 150000;
     final String orderNum = order?.orderNumber ?? 'ORD-KPM-${DateTime.now().millisecondsSinceEpoch}';
-    final String snapUrl = order?.paymentUrl ?? 'https://app.sandbox.midtrans.com/snap/v2/vtweb/demo';
+    final String snapUrl = _liveSnapUrl ?? order?.paymentUrl ?? 'https://app.sandbox.midtrans.com/snap/v2/vtweb/demo';
 
     return Scaffold(
       backgroundColor: isDark ? AppTheme.darkBackgroundColor : AppTheme.backgroundColor,
