@@ -298,7 +298,11 @@ class _PackageListScreenState extends State<PackageListScreen> {
                               minimumSize: const Size(0, 36),
                             ),
                             onPressed: () {
-                              Navigator.pushNamed(context, '/belajar');
+                              Navigator.pushNamedAndRemoveUntil(
+                                context,
+                                '/belajar',
+                                (route) => false,
+                              );
                             },
                             icon: const Icon(Icons.play_circle_fill_rounded, size: 16),
                             label: const Text('Buka Kelas', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),

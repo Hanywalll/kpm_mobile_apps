@@ -268,7 +268,7 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
               child: TextButton(
                 onPressed: () {
                   Navigator.pop(ctx);
-                  Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+                  Navigator.pushNamedAndRemoveUntil(context, '/belajar', (route) => false);
                 },
                 child: Text(
                   'Langsung Belajar',

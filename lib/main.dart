@@ -113,6 +113,8 @@ class KPMApp extends StatelessWidget {
               '/login': (context) => const LoginScreen(),
               '/register': (context) => const RegisterScreen(),
               '/home': (context) => const MainNavigationScreen(),
+              '/belajar': (context) => const MainNavigationScreen(initialIndex: 1),
+              '/latihan': (context) => const MainNavigationScreen(initialIndex: 2),
               '/package_list': (context) => const PackageListScreen(),
               '/package_detail': (context) => const PackageDetailScreen(),
               '/cart': (context) => const CartScreen(),

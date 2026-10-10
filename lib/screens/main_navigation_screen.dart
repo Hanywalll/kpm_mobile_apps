@@ -18,11 +18,29 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   late int _currentIndex;
+  bool _initializedFromRoute = false;
 
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initializedFromRoute) {
+      _initializedFromRoute = true;
+      final arg = ModalRoute.of(context)?.settings.arguments;
+      if (arg is int && arg >= 0 && arg < _screens.length) {
+        _currentIndex = arg;
+      } else if (arg is Map && arg.containsKey('tabIndex')) {
+        final tab = arg['tabIndex'];
+        if (tab is int && tab >= 0 && tab < _screens.length) {
+          _currentIndex = tab;
+        }
+      }
+    }
   }
 
   final List<Widget> _screens = const [

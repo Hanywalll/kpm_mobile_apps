@@ -324,7 +324,11 @@ class PackageDetailScreen extends StatelessWidget {
                         elevation: 2,
                       ),
                       onPressed: () {
-                        Navigator.pushNamed(context, '/belajar');
+                        Navigator.pushNamedAndRemoveUntil(
+                          context,
+                          '/belajar',
+                          (route) => false,
+                        );
                       },
                       icon: const Icon(Icons.play_circle_fill_rounded, size: 18),
                       label: const Text(
