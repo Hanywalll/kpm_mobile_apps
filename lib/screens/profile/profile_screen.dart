@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/package_provider.dart';
 import '../../providers/practice_provider.dart';
 
 class ProfileScreen extends StatefulWidget {

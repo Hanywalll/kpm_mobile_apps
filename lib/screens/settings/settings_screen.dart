@@ -135,7 +135,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
+            colorScheme: ColorScheme.light(
               primary: AppTheme.primaryBlue,
               onPrimary: Colors.white,
             ),
@@ -171,7 +171,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
+            colorScheme: ColorScheme.light(
               primary: AppTheme.primaryBlue,
               onPrimary: Colors.white,
             ),
