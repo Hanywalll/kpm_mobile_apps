@@ -14,12 +14,14 @@ class MidtransPaymentScreen extends StatefulWidget {
   final OrderModel? order;
   final PackageModel? package;
   final List<PackageModel>? items;
+  final String? initialChannel;
 
   const MidtransPaymentScreen({
     super.key,
     this.order,
     this.package,
     this.items,
+    this.initialChannel,
   });
 
   @override
@@ -27,26 +29,29 @@ class MidtransPaymentScreen extends StatefulWidget {
 }
 
 class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
-  String _selectedChannel = 'qris'; // 'qris' or 'va'
+  String _selectedChannel = 'va'; // Default to 'va' so Virtual Account is immediately visible!
   String _selectedBank = 'BCA';
   bool _isChecking = false;
   bool _isLoadingVa = false;
-  final Map<String, String> _realVaCache = {};
+  String? _vaErrorMessage;
+  final Map<String, Map<String, dynamic>> _realVaCache = {};
   late Timer _countdownTimer;
   int _secondsRemaining = 60 * 60; // 60 minutes expiry
 
-  late String _vaNumber;
+  String? _vaNumber;
+  String? _activeMidtransOrderId;
+  final Set<String> _trackedOrderIds = {};
   String? _liveSnapUrl;
   Timer? _statusPollingTimer;
 
   @override
   void initState() {
     super.initState();
+    _selectedChannel = widget.initialChannel ?? 'va';
     _liveSnapUrl = widget.order?.paymentUrl;
-    final seed = widget.order?.orderNumber ?? widget.order?.id ?? DateTime.now().millisecondsSinceEpoch.toString();
-    final cleanSeed = seed.replaceAll(RegExp(r'[^0-9]'), '');
-    final paddedSeed = (cleanSeed.length >= 8 ? cleanSeed.substring(cleanSeed.length - 8) : '89201948');
-    _vaNumber = '80777$paddedSeed';
+    if (widget.order?.orderNumber != null && widget.order!.orderNumber.isNotEmpty) {
+      _trackedOrderIds.add(widget.order!.orderNumber);
+    }
 
     _startTimer();
     _startPolling();
@@ -58,48 +63,102 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
 
   Future<void> _fetchRealVa(String bank) async {
     if (_realVaCache.containsKey(bank)) {
+      final cached = _realVaCache[bank]!;
       setState(() {
-        _vaNumber = _realVaCache[bank]!;
+        _vaNumber = cached['va_number'];
+        _activeMidtransOrderId = cached['order_id'];
+        _vaErrorMessage = null;
+        if (_activeMidtransOrderId != null) {
+          _trackedOrderIds.add(_activeMidtransOrderId!);
+        }
       });
       return;
     }
 
-    setState(() => _isLoadingVa = true);
+    setState(() {
+      _isLoadingVa = true;
+      _vaErrorMessage = null;
+    });
+
     final packageProvider = Provider.of<PackageProvider>(context, listen: false);
     final orderNum = widget.order?.orderNumber ?? 'ORD-KPM-${DateTime.now().millisecondsSinceEpoch}';
     final amount = widget.order?.totalPrice ?? widget.package?.effectivePrice ?? 150000;
+    final snapToken = widget.order?.paymentReference;
 
-    final realVa = await packageProvider.getRealMidtransVA(
+    final result = await packageProvider.getRealMidtransVA(
       orderId: orderNum,
       grossAmount: amount,
       bank: bank,
+      existingSnapToken: snapToken,
     );
 
     if (mounted) {
-      setState(() {
-        _isLoadingVa = false;
-        if (realVa != null && realVa.isNotEmpty) {
-          _realVaCache[bank] = realVa;
-          _vaNumber = realVa;
-        }
-      });
+      if (result != null && result['va_number'] != null && result['va_number'].toString().isNotEmpty) {
+        final va = result['va_number'].toString();
+        final midtransOrderId = result['order_id']?.toString() ?? orderNum;
+        _realVaCache[bank] = result;
+        setState(() {
+          _isLoadingVa = false;
+          _vaNumber = va;
+          _activeMidtransOrderId = midtransOrderId;
+          _trackedOrderIds.add(midtransOrderId);
+          _vaErrorMessage = null;
+        });
+      } else {
+        setState(() {
+          _isLoadingVa = false;
+          _vaErrorMessage = 'Gagal memuat nomor VA dari Midtrans Sandbox. Silakan coba lagi.';
+        });
+      }
     }
   }
 
   Future<void> _openSimulator(String bank) async {
-    final bankKey = bank.toLowerCase();
-    final url = Uri.parse('https://simulator.sandbox.midtrans.com/$bankKey/va/index');
+    if (_vaNumber != null && _vaNumber!.isNotEmpty) {
+      Clipboard.setData(ClipboardData(text: _vaNumber!));
+    }
+
+    String simUrl;
+    final b = bank.toLowerCase();
+    switch (b) {
+      case 'bca':
+        simUrl = 'https://simulator.sandbox.midtrans.com/bca/va/index';
+        break;
+      case 'bni':
+        simUrl = 'https://simulator.sandbox.midtrans.com/bni/va/index';
+        break;
+      case 'bri':
+        simUrl = 'https://simulator.sandbox.midtrans.com/openapi/va/index?bank=bri';
+        break;
+      case 'permata':
+        simUrl = 'https://simulator.sandbox.midtrans.com/openapi/va/index?bank=permata';
+        break;
+      default:
+        simUrl = 'https://simulator.sandbox.midtrans.com/bca/va/index';
+    }
+
+    final url = Uri.parse(simUrl);
     try {
       if (await canLaunchUrl(url)) {
         await launchUrl(url, mode: LaunchMode.externalApplication);
       } else {
         await launchUrl(url);
       }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Nomor VA $_vaNumber telah disalin! Buka halaman simulator dan tempel.'),
+            backgroundColor: AppTheme.accentGreen,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Simulator: https://simulator.sandbox.midtrans.com/$bankKey/va/index'),
+            content: Text('Simulator: $simUrl'),
             backgroundColor: AppTheme.primaryBlue,
           ),
         );
@@ -130,9 +189,9 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
       if (!mounted) return;
       final packageProvider = Provider.of<PackageProvider>(context, listen: false);
       final orderId = widget.order?.id ?? '';
-      final orderNum = widget.order?.orderNumber ?? '';
-      if (orderNum.isNotEmpty) {
-        final isPaid = await packageProvider.checkMidtransStatus(orderId, orderNum);
+      final idsToCheck = _trackedOrderIds.toList();
+      if (idsToCheck.isNotEmpty) {
+        final isPaid = await packageProvider.checkMidtransStatus(orderId, idsToCheck);
         if (isPaid && mounted) {
           timer.cancel();
           if (widget.items != null && widget.items!.isNotEmpty) {
@@ -198,9 +257,12 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
     final packageProvider = Provider.of<PackageProvider>(context, listen: false);
 
     final orderId = widget.order?.id ?? 'ord_demo_1';
-    final orderNum = widget.order?.orderNumber ?? 'ORD-KPM-${DateTime.now().millisecondsSinceEpoch}';
+    final idsToCheck = _trackedOrderIds.toList();
+    if (idsToCheck.isEmpty && widget.order?.orderNumber != null) {
+      idsToCheck.add(widget.order!.orderNumber);
+    }
 
-    final isPaid = await packageProvider.checkMidtransStatus(orderId, orderNum);
+    final isPaid = await packageProvider.checkMidtransStatus(orderId, idsToCheck);
 
     setState(() => _isChecking = false);
 
@@ -739,8 +801,6 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
       {'code': 'Permata', 'name': 'Permata Virtual Account'},
     ];
 
-    final displayVa = _vaNumber;
-
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: AppTheme.bentoBoxDecoration(context: context),
@@ -795,36 +855,108 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
           ),
           const SizedBox(height: 16),
 
-          // VA Number Box
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: isDark ? AppTheme.darkBorderColor : const Color(0xFFCBD5E1)),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Nomor Virtual Account ($_selectedBank Resmi Midtrans)',
-                        style: TextStyle(fontSize: 10, color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary),
-                      ),
-                      const SizedBox(height: 4),
-                      if (_isLoadingVa)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 4),
-                          child: Text(
-                            'Membuat nomor VA resmi...',
-                            style: TextStyle(fontSize: 13, fontStyle: FontStyle.italic, color: AppTheme.textSecondary),
-                          ),
-                        )
-                      else
+          // VA Number Box or Loading State
+          if (_isLoadingVa)
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: isDark ? AppTheme.darkBorderColor : const Color(0xFFCBD5E1)),
+              ),
+              child: Row(
+                children: [
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          displayVa,
+                          'Membuat nomor VA resmi dari Midtrans...',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Menghubungi Midtrans Sandbox untuk $_selectedBank',
+                          style: TextStyle(fontSize: 10, color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else if (_vaErrorMessage != null)
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 22),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      _vaErrorMessage!,
+                      style: const TextStyle(fontSize: 11, color: Colors.redAccent),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => _fetchRealVa(_selectedBank),
+                    child: const Text('Coba Lagi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  ),
+                ],
+              ),
+            )
+          else
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: isDark ? AppTheme.darkBorderColor : const Color(0xFFCBD5E1)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              'Nomor Virtual Account ($_selectedBank Resmi)',
+                              style: TextStyle(fontSize: 10, color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary),
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                              decoration: BoxDecoration(
+                                color: AppTheme.accentGreen.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'MIDTRANS LIVE',
+                                style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: AppTheme.accentGreen),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        SelectableText(
+                          _vaNumber ?? '-',
                           style: const TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w900,
@@ -832,49 +964,42 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
                             color: AppTheme.primaryBlue,
                           ),
                         ),
-                    ],
-                  ),
-                ),
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryBlue,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    minimumSize: const Size(0, 36),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  onPressed: _isLoadingVa ? null : () => _copyToClipboard(displayVa, 'Nomor Virtual Account $_selectedBank'),
-                  icon: const Icon(Icons.copy_rounded, size: 14),
-                  label: const Text('Salin', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Clean Midtrans Simulator Direct Link
-          InkWell(
-            onTap: () => _openSimulator(_selectedBank),
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryBlue.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppTheme.primaryBlue.withValues(alpha: 0.2)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.open_in_browser_rounded, size: 16, color: AppTheme.primaryBlue),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Buka Simulator Midtrans ($_selectedBank) 🌐',
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
+                      ],
                     ),
                   ),
-                  const Icon(Icons.chevron_right_rounded, size: 16, color: AppTheme.primaryBlue),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryBlue,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      minimumSize: const Size(0, 36),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    onPressed: _vaNumber == null ? null : () => _copyToClipboard(_vaNumber!, 'Nomor Virtual Account $_selectedBank'),
+                    icon: const Icon(Icons.copy_rounded, size: 14),
+                    label: const Text('Salin', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  ),
                 ],
+              ),
+            ),
+          const SizedBox(height: 12),
+
+          // Prominent Midtrans Simulator Action Button
+          SizedBox(
+            width: double.infinity,
+            height: 44,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0284C7),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                elevation: 0,
+              ),
+              onPressed: (_isLoadingVa || _vaNumber == null) ? null : () => _openSimulator(_selectedBank),
+              icon: const Icon(Icons.open_in_browser_rounded, size: 17),
+              label: Text(
+                'Salin & Buka Simulator Midtrans ($_selectedBank) 🌐',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
               ),
             ),
           ),
@@ -886,9 +1011,9 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
           ),
           const SizedBox(height: 8),
-          _instructionStep('1', 'Salin Nomor Virtual Account di atas.'),
-          _instructionStep('2', 'Buka Simulator Midtrans & pilih tab Inquiry/Payment.'),
-          _instructionStep('3', 'Tempel nomor VA, lakukan inquiry & payment. Status langsung berubah lunas!'),
+          _instructionStep('1', 'Nomor VA di atas otomatis disalin saat Anda klik tombol biru.'),
+          _instructionStep('2', 'Pada simulator Midtrans, tempel nomor VA lalu klik Inquiry.'),
+          _instructionStep('3', 'Klik tombol Pay. Status di aplikasi langsung otomatis lunas!'),
         ],
       ),
     );

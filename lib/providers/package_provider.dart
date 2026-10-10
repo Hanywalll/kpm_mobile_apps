@@ -284,31 +284,43 @@ class PackageProvider with ChangeNotifier {
     );
   }
 
-  Future<String?> getRealMidtransVA({
+  Future<Map<String, dynamic>?> getRealMidtransVA({
     required String orderId,
     required double grossAmount,
     required String bank,
+    String? existingSnapToken,
   }) {
     return _packageService.getRealMidtransVA(
       orderId: orderId,
       grossAmount: grossAmount,
       bank: bank,
+      existingSnapToken: existingSnapToken,
     );
   }
 
-  Future<bool> checkMidtransStatus(String orderId, String orderNumber) async {
+  Future<bool> checkMidtransStatus(String orderId, dynamic orderNumberOrList) async {
     _isLoading = true;
     notifyListeners();
     try {
-      final res = await _packageService.checkMidtransStatus(orderNumber);
-      final txStatus = res?['transaction_status'] as String?;
-      if (txStatus == 'settlement' || txStatus == 'capture' || txStatus == 'paid') {
-        await _packageService.simulatePayOrder(orderId);
-        await fetchUserOrders();
-        _isLoading = false;
-        notifyListeners();
-        return true;
+      List<String> orderNumbers = [];
+      if (orderNumberOrList is List) {
+        orderNumbers = orderNumberOrList.map((e) => e.toString()).where((e) => e.isNotEmpty).toList();
+      } else if (orderNumberOrList is String && orderNumberOrList.isNotEmpty) {
+        orderNumbers = [orderNumberOrList];
       }
+
+      for (final num in orderNumbers) {
+        final res = await _packageService.checkMidtransStatus(num);
+        final txStatus = res?['transaction_status'] as String?;
+        if (txStatus == 'settlement' || txStatus == 'capture' || txStatus == 'paid') {
+          await _packageService.simulatePayOrder(orderId);
+          await fetchUserOrders();
+          _isLoading = false;
+          notifyListeners();
+          return true;
+        }
+      }
+
       _isLoading = false;
       notifyListeners();
       return false;

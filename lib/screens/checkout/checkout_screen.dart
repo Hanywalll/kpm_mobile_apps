@@ -59,6 +59,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             order: order,
             package: mainPkg,
             items: items.isNotEmpty ? items : [mainPkg],
+            initialChannel: _selectedMethod == 'Virtual Account' ? 'va' : 'qris',
           ),
         ),
       );
