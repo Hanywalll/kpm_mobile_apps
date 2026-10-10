@@ -87,11 +87,48 @@ class OrderModel {
     );
   }
 
+  OrderModel copyWith({
+    String? id,
+    String? userId,
+    String? packageId,
+    PackageModel? package,
+    String? type,
+    String? orderNumber,
+    double? totalPrice,
+    bool? isCustomAmount,
+    String? paymentStatus,
+    String? transactionId,
+    String? paymentReference,
+    String? paymentUrl,
+    String? paymentType,
+    String? paymentTime,
+    String? createdAt,
+  }) {
+    return OrderModel(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      packageId: packageId ?? this.packageId,
+      package: package ?? this.package,
+      type: type ?? this.type,
+      orderNumber: orderNumber ?? this.orderNumber,
+      totalPrice: totalPrice ?? this.totalPrice,
+      isCustomAmount: isCustomAmount ?? this.isCustomAmount,
+      paymentStatus: paymentStatus ?? this.paymentStatus,
+      transactionId: transactionId ?? this.transactionId,
+      paymentReference: paymentReference ?? this.paymentReference,
+      paymentUrl: paymentUrl ?? this.paymentUrl,
+      paymentType: paymentType ?? this.paymentType,
+      paymentTime: paymentTime ?? this.paymentTime,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
       'user_id': userId,
       'package_id': packageId,
+      if (package != null) 'package': package!.toJson(),
       'type': type,
       'order_number': orderNumber,
       'total_price': totalPrice,

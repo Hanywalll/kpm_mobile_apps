@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../core/api/api_client.dart';
 import '../core/api/api_endpoints.dart';
 import '../models/package_model.dart';
@@ -130,6 +131,17 @@ class PackageService {
     final snapUrl = snapData?['redirect_url'] as String? ?? 'https://app.sandbox.midtrans.com/snap/v2/vtweb/demo';
     final snapToken = snapData?['token'] as String? ?? 'snap_demo_token';
 
+    final matchedPackage = _getDemoPackages().firstWhere(
+      (p) => p.id == packageId,
+      orElse: () => PackageModel(
+        id: packageId,
+        title: 'Paket Belajar KPM',
+        description: 'Akses Lengkap Materi KPM',
+        price: amount,
+      ),
+    );
+
+    OrderModel finalOrder;
     try {
       final response = await _apiClient.dio.post(
         ApiEndpoints.orders,
@@ -141,25 +153,24 @@ class PackageService {
       );
       final model = OrderModel.fromJson(response.data['data'] ?? response.data);
       final pUrl = model.paymentUrl;
-      if (pUrl == null || pUrl.isEmpty || pUrl.contains('demo')) {
-        return OrderModel(
-          id: model.id,
-          userId: model.userId,
-          packageId: model.packageId,
-          orderNumber: model.orderNumber.isNotEmpty ? model.orderNumber : orderNum,
-          totalPrice: model.totalPrice > 0 ? model.totalPrice : amount,
-          paymentStatus: model.paymentStatus,
-          paymentUrl: snapUrl,
-          paymentReference: snapToken,
-          createdAt: model.createdAt,
-        );
-      }
-      return model;
+      finalOrder = OrderModel(
+        id: model.id.isNotEmpty ? model.id : 'ord_${DateTime.now().millisecondsSinceEpoch}',
+        userId: model.userId.isNotEmpty ? model.userId : 'kpm_student_1',
+        packageId: model.packageId ?? packageId,
+        package: model.package ?? matchedPackage,
+        orderNumber: model.orderNumber.isNotEmpty ? model.orderNumber : orderNum,
+        totalPrice: model.totalPrice > 0 ? model.totalPrice : amount,
+        paymentStatus: model.paymentStatus,
+        paymentUrl: (pUrl != null && pUrl.isNotEmpty && !pUrl.contains('demo')) ? pUrl : snapUrl,
+        paymentReference: model.paymentReference ?? snapToken,
+        createdAt: model.createdAt ?? DateTime.now().toIso8601String(),
+      );
     } catch (_) {
-      return OrderModel(
+      finalOrder = OrderModel(
         id: 'ord_${DateTime.now().millisecondsSinceEpoch}',
         userId: 'kpm_student_1',
         packageId: packageId,
+        package: matchedPackage,
         orderNumber: orderNum,
         totalPrice: amount,
         paymentStatus: 'pending',
@@ -168,6 +179,39 @@ class PackageService {
         createdAt: DateTime.now().toIso8601String(),
       );
     }
+
+    // Save to local cache so it appears immediately in history
+    await _loadOrdersFromPrefs();
+    if (_cachedOrders.isEmpty) {
+      _cachedOrders = _getDemoOrders();
+    }
+    _cachedOrders.removeWhere((o) => o.id == finalOrder.id || o.orderNumber == finalOrder.orderNumber);
+    _cachedOrders.insert(0, finalOrder);
+    await _saveOrdersToPrefs();
+
+    return finalOrder;
+  }
+
+  static List<OrderModel> _cachedOrders = [];
+  static const String _ordersPrefKey = 'kpm_cached_orders_v2';
+
+  static Future<void> _loadOrdersFromPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_ordersPrefKey);
+      if (raw != null && raw.isNotEmpty) {
+        final List decoded = jsonDecode(raw);
+        _cachedOrders = decoded.map((e) => OrderModel.fromJson(e)).toList();
+      }
+    } catch (_) {}
+  }
+
+  static Future<void> _saveOrdersToPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final listMap = _cachedOrders.map((e) => e.toJson()).toList();
+      await prefs.setString(_ordersPrefKey, jsonEncode(listMap));
+    } catch (_) {}
   }
 
   Future<List<OrderModel>> getUserOrders() async {
@@ -175,15 +219,30 @@ class PackageService {
   }
 
   Future<List<OrderModel>> getOrderHistory() async {
+    await _loadOrdersFromPrefs();
+    if (_cachedOrders.isEmpty) {
+      _cachedOrders = _getDemoOrders();
+      await _saveOrdersToPrefs();
+    }
+
     try {
       final response = await _apiClient.dio.get(ApiEndpoints.myOrders);
       final List data = response.data['data'] ?? [];
       final list = data.map((e) => OrderModel.fromJson(e as Map<String, dynamic>)).toList();
-      if (list.isNotEmpty) return list;
-      return _getDemoOrders();
-    } catch (_) {
-      return _getDemoOrders();
-    }
+      if (list.isNotEmpty) {
+        for (final remote in list) {
+          final idx = _cachedOrders.indexWhere((c) => c.id == remote.id || c.orderNumber == remote.orderNumber);
+          if (idx >= 0) {
+            _cachedOrders[idx] = remote;
+          } else {
+            _cachedOrders.add(remote);
+          }
+        }
+        await _saveOrdersToPrefs();
+      }
+    } catch (_) {}
+
+    return List<OrderModel>.from(_cachedOrders);
   }
 
   List<OrderModel> _getDemoOrders() {
@@ -216,14 +275,60 @@ class PackageService {
   }
 
   Future<OrderModel> getOrderDetail(String id) async {
-    final response = await _apiClient.dio.get(ApiEndpoints.orderDetail(id));
-    return OrderModel.fromJson(response.data['data'] ?? response.data);
+    await _loadOrdersFromPrefs();
+    final local = _cachedOrders.firstWhere(
+      (o) => o.id == id || o.orderNumber == id,
+      orElse: () => _getDemoOrders().first,
+    );
+    try {
+      final response = await _apiClient.dio.get(ApiEndpoints.orderDetail(id));
+      return OrderModel.fromJson(response.data['data'] ?? response.data);
+    } catch (_) {
+      return local;
+    }
   }
 
   Future<void> simulatePayOrder(String orderId) async {
     try {
       await _apiClient.dio.post(ApiEndpoints.simulatePayOrder(orderId));
     } catch (_) {}
+
+    await _loadOrdersFromPrefs();
+    if (_cachedOrders.isEmpty) {
+      _cachedOrders = _getDemoOrders();
+    }
+
+    bool matched = false;
+    for (int i = 0; i < _cachedOrders.length; i++) {
+      final o = _cachedOrders[i];
+      if (o.id == orderId ||
+          o.orderNumber == orderId ||
+          orderId.contains(o.id) ||
+          (orderId == 'ord_demo_2' && o.id == 'ord_demo_2')) {
+        _cachedOrders[i] = o.copyWith(
+          paymentStatus: 'paid',
+          paymentType: 'Midtrans Sandbox (Lunas)',
+          paymentTime: DateTime.now().toIso8601String(),
+        );
+        matched = true;
+      }
+    }
+
+    if (!matched) {
+      // If not specifically matched by ID, update the first pending order or ord_demo_2
+      for (int i = 0; i < _cachedOrders.length; i++) {
+        if (_cachedOrders[i].isPending) {
+          _cachedOrders[i] = _cachedOrders[i].copyWith(
+            paymentStatus: 'paid',
+            paymentType: 'Midtrans Sandbox (Lunas)',
+            paymentTime: DateTime.now().toIso8601String(),
+          );
+          break;
+        }
+      }
+    }
+
+    await _saveOrdersToPrefs();
   }
 
   List<PackageModel> _getFilteredDemoPackages({String? jenjang, String? search}) {

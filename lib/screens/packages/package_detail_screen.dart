@@ -107,7 +107,30 @@ class PackageDetailScreen extends StatelessWidget {
                                     ),
                                   ),
                                   const SizedBox(width: 6),
-                                  if (pkg.hasDiscount)
+                                  if (packageProvider.isEnrolled(pkg.id))
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF10B981),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.check_circle_rounded, size: 10, color: Colors.white),
+                                          SizedBox(width: 3),
+                                          Text(
+                                            'SUDAH AKTIF',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w900,
+                                              fontSize: 9,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                  else if (pkg.hasDiscount)
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
                                       decoration: BoxDecoration(
@@ -243,112 +266,150 @@ class PackageDetailScreen extends StatelessWidget {
             child: SafeArea(
               child: Row(
                 children: [
-                  // Total Price Section
+                  // Total Price / Enrolled Status Section
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'Total Pembayaran',
+                        packageProvider.isEnrolled(pkg.id) ? 'Status Akses' : 'Total Pembayaran',
                         style: TextStyle(fontSize: 11, color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary),
                       ),
-                      if (pkg.hasDiscount)
+                      if (packageProvider.isEnrolled(pkg.id)) ...[
+                        const Row(
+                          children: [
+                            Icon(Icons.verified_rounded, size: 16, color: Color(0xFF10B981)),
+                            SizedBox(width: 4),
+                            Text(
+                              'Langganan Aktif',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFF10B981),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ] else ...[
+                        if (pkg.hasDiscount)
+                          Text(
+                            Formatter.currency(pkg.price),
+                            style: TextStyle(
+                              decoration: TextDecoration.lineThrough,
+                              color: isDark ? AppTheme.darkTextMuted : AppTheme.textMuted,
+                              fontSize: 10,
+                            ),
+                          ),
                         Text(
-                          Formatter.currency(pkg.price),
-                          style: TextStyle(
-                            decoration: TextDecoration.lineThrough,
-                            color: isDark ? AppTheme.darkTextMuted : AppTheme.textMuted,
-                            fontSize: 10,
+                          Formatter.currency(pkg.effectivePrice),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            color: AppTheme.primaryBlue,
                           ),
                         ),
-                      Text(
-                        Formatter.currency(pkg.effectivePrice),
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          color: AppTheme.primaryBlue,
-                        ),
-                      ),
+                      ],
                     ],
                   ),
                   const Spacer(),
 
-                  // Compact Cart Toggle Button
-                  Container(
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: isAlreadyInCart
-                          ? AppTheme.accentGreen.withValues(alpha: 0.12)
-                          : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isAlreadyInCart ? AppTheme.accentGreen : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+                  if (packageProvider.isEnrolled(pkg.id))
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF10B981),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+                        minimumSize: const Size(0, 42),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 2,
+                      ),
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/belajar');
+                      },
+                      icon: const Icon(Icons.play_circle_fill_rounded, size: 18),
+                      label: const Text(
+                        'Mulai Belajar 🚀',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                    )
+                  else ...[
+                    // Compact Cart Toggle Button
+                    Container(
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: isAlreadyInCart
+                            ? AppTheme.accentGreen.withValues(alpha: 0.12)
+                            : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isAlreadyInCart ? AppTheme.accentGreen : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+                        ),
+                      ),
+                      child: IconButton(
+                        onPressed: () {
+                          if (!AdminPreviewGuard.checkActionAllowed(context, actionName: 'menambah paket ke keranjang')) {
+                            return;
+                          }
+                          final added = packageProvider.toggleCart(pkg);
+                          if (added) {
+                            AppModal.showCartSuccess(
+                              context,
+                              package: pkg,
+                              onGoToCart: () => Navigator.pushNamed(context, '/cart'),
+                            );
+                          } else {
+                            AppModal.showInfo(
+                              context,
+                              title: 'Dihapus dari Keranjang',
+                              message: '${pkg.title} telah dihapus dari keranjang belajar Anda.',
+                            );
+                          }
+                        },
+                        icon: Icon(
+                          isAlreadyInCart ? Icons.shopping_cart_rounded : Icons.add_shopping_cart_rounded,
+                          color: isAlreadyInCart ? AppTheme.accentGreen : AppTheme.primaryBlue,
+                          size: 20,
+                        ),
+                        tooltip: isAlreadyInCart ? 'Hapus dari Keranjang' : 'Tambah ke Keranjang',
                       ),
                     ),
-                    child: IconButton(
+
+                    const SizedBox(width: 8),
+
+                    // Compact Beli Sekarang Button
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryBlue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+                        minimumSize: const Size(0, 42),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 2,
+                      ),
                       onPressed: () {
-                        if (!AdminPreviewGuard.checkActionAllowed(context, actionName: 'menambah paket ke keranjang')) {
+                        if (!AdminPreviewGuard.checkActionAllowed(context, actionName: 'membeli paket belajar')) {
                           return;
                         }
-                        final added = packageProvider.toggleCart(pkg);
-                        if (added) {
-                          AppModal.showCartSuccess(
-                            context,
-                            package: pkg,
-                            onGoToCart: () => Navigator.pushNamed(context, '/cart'),
-                          );
-                        } else {
-                          AppModal.showInfo(
-                            context,
-                            title: 'Dihapus dari Keranjang',
-                            message: '${pkg.title} telah dihapus dari keranjang belajar Anda.',
-                          );
-                        }
+                        AuthGuard.check(
+                          context,
+                          featureName: pkg.title,
+                          onAuthenticated: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => CheckoutScreen(cartPackage: pkg),
+                              ),
+                            );
+                          },
+                        );
                       },
-                      icon: Icon(
-                        isAlreadyInCart ? Icons.shopping_cart_rounded : Icons.add_shopping_cart_rounded,
-                        color: isAlreadyInCart ? AppTheme.accentGreen : AppTheme.primaryBlue,
-                        size: 20,
+                      icon: const Icon(Icons.shopping_bag_rounded, size: 17),
+                      label: const Text(
+                        'Beli Sekarang',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                       ),
-                      tooltip: isAlreadyInCart ? 'Hapus dari Keranjang' : 'Tambah ke Keranjang',
                     ),
-                  ),
-
-                  const SizedBox(width: 8),
-
-                  // Compact Beli Sekarang Button
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryBlue,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
-                      minimumSize: const Size(0, 42),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 2,
-                    ),
-                    onPressed: () {
-                      if (!AdminPreviewGuard.checkActionAllowed(context, actionName: 'membeli paket belajar')) {
-                        return;
-                      }
-                      AuthGuard.check(
-                        context,
-                        featureName: pkg.title,
-                        onAuthenticated: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => CheckoutScreen(cartPackage: pkg),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                    icon: const Icon(Icons.shopping_bag_rounded, size: 17),
-                    label: const Text(
-                      'Beli Sekarang',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                    ),
-                  ),
+                  ],
                 ],
               ),
             ),

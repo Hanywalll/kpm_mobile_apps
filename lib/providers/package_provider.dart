@@ -211,28 +211,38 @@ class PackageProvider with ChangeNotifier {
     } catch (_) {}
   }
 
-  Future<void> simulatePay(String orderId, {PackageModel? fallbackPackage}) async {
+  Future<void> simulatePay(String orderId, {PackageModel? fallbackPackage, List<PackageModel>? fallbackItems}) async {
+    // 1. Immediately enroll package(s)
+    if (fallbackItems != null && fallbackItems.isNotEmpty) {
+      for (final it in fallbackItems) {
+        enrollPackage(it);
+      }
+    } else if (fallbackPackage != null) {
+      enrollPackage(fallbackPackage);
+    } else if (_selectedPackage != null) {
+      enrollPackage(_selectedPackage!);
+    }
+
+    // 2. Mark order as paid in service and local storage
     try {
       await _packageService.simulatePayOrder(orderId);
     } catch (_) {}
+
+    // 3. Refresh user orders
     await fetchUserOrders();
     
-    // Enroll the package
-    if (fallbackPackage != null) {
-      enrollPackage(fallbackPackage);
-    } else {
-      final matchedOrder = _userOrders.firstWhere(
-        (o) => o.id == orderId,
-        orElse: () => OrderModel(id: orderId, userId: '', orderNumber: '', totalPrice: 0),
-      );
-      if (matchedOrder.package != null) {
-        enrollPackage(matchedOrder.package!);
-      } else if (_selectedPackage != null) {
-        enrollPackage(_selectedPackage!);
-      } else if (_packages.isNotEmpty) {
-        enrollPackage(_packages.first);
-      }
+    // 4. Enroll package from matched order
+    final matchedOrder = _userOrders.firstWhere(
+      (o) => o.id == orderId || o.orderNumber == orderId,
+      orElse: () => OrderModel(id: orderId, userId: '', orderNumber: '', totalPrice: 0),
+    );
+    if (matchedOrder.package != null) {
+      enrollPackage(matchedOrder.package!);
+    } else if (_enrolledPackages.isEmpty && _packages.isNotEmpty) {
+      enrollPackage(_packages.first);
     }
+
+    notifyListeners();
   }
 
   Future<bool> checkMidtransStatus(String orderId, String orderNumber) async {

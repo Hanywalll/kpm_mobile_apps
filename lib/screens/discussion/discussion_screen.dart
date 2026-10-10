@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/auth_guard_bottom_sheet.dart';
 
@@ -11,11 +12,12 @@ class DiscussionTopic {
   final String category;
   final String title;
   final String question;
-  final int likes;
-  final int repliesCount;
+  int likes;
+  int repliesCount;
   final String timeAgo;
   final bool isAnsweredByTutor;
   final String? tutorReply;
+  bool isLikedByMe;
 
   DiscussionTopic({
     required this.id,
@@ -30,6 +32,7 @@ class DiscussionTopic {
     required this.timeAgo,
     this.isAnsweredByTutor = false,
     this.tutorReply,
+    this.isLikedByMe = false,
   });
 }
 
@@ -107,6 +110,63 @@ class _DiscussionScreenState extends State<DiscussionScreen> {
     'SNBT & UTBK',
     'Tips Belajar',
   ];
+
+  final Set<String> _likedTopicIds = {};
+  static const String _prefLikedKey = 'kpm_liked_topics';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLikedIds();
+  }
+
+  Future<void> _loadLikedIds() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final list = prefs.getStringList(_prefLikedKey) ?? [];
+      setState(() {
+        _likedTopicIds.addAll(list);
+        for (final t in _topics) {
+          if (_likedTopicIds.contains(t.id)) {
+            t.isLikedByMe = true;
+          }
+        }
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _saveLikedIds() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(_prefLikedKey, _likedTopicIds.toList());
+    } catch (_) {}
+  }
+
+  void _toggleLike(DiscussionTopic topic) {
+    setState(() {
+      if (_likedTopicIds.contains(topic.id)) {
+        _likedTopicIds.remove(topic.id);
+        topic.isLikedByMe = false;
+        topic.likes = (topic.likes - 1).clamp(0, 999999);
+      } else {
+        _likedTopicIds.add(topic.id);
+        topic.isLikedByMe = true;
+        topic.likes += 1;
+      }
+    });
+    _saveLikedIds();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          topic.isLikedByMe
+              ? 'Menyukai pertanyaan: "${topic.title.length > 30 ? topic.title.substring(0, 30) + '...' : topic.title}" ❤️'
+              : 'Batal menyukai pertanyaan ini',
+        ),
+        duration: const Duration(milliseconds: 1200),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -345,19 +405,16 @@ class _DiscussionScreenState extends State<DiscussionScreen> {
             children: [
               Row(
                 children: [
-                  _actionChip(
-                    icon: Icons.thumb_up_alt_outlined,
-                    label: '${topic.likes} Suka',
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Menyukai pertanyaan ini! ❤️'),
-                          duration: Duration(seconds: 1),
-                        ),
-                      );
-                    },
-                    isDark: isDark,
-                  ),
+                  Builder(builder: (context) {
+                    final isLiked = topic.isLikedByMe || _likedTopicIds.contains(topic.id);
+                    return _actionChip(
+                      icon: isLiked ? Icons.thumb_up_alt_rounded : Icons.thumb_up_alt_outlined,
+                      iconColor: isLiked ? const Color(0xFF1D4ED8) : null,
+                      label: '${topic.likes} Suka',
+                      onTap: () => _toggleLike(topic),
+                      isDark: isDark,
+                    );
+                  }),
                   const SizedBox(width: 12),
                   _actionChip(
                     icon: Icons.chat_bubble_outline_rounded,
@@ -395,19 +452,20 @@ class _DiscussionScreenState extends State<DiscussionScreen> {
     required String label,
     required VoidCallback onTap,
     required bool isDark,
+    Color? iconColor,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Row(
         children: [
-          Icon(icon, size: 15, color: isDark ? AppTheme.darkTextMuted : const Color(0xFF64748B)),
+          Icon(icon, size: 15, color: iconColor ?? (isDark ? AppTheme.darkTextMuted : const Color(0xFF64748B))),
           const SizedBox(width: 4),
           Text(
             label,
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: isDark ? AppTheme.darkTextSecondary : const Color(0xFF64748B),
+              color: iconColor ?? (isDark ? AppTheme.darkTextSecondary : const Color(0xFF64748B)),
             ),
           ),
         ],
@@ -615,11 +673,15 @@ class _DiscussionScreenState extends State<DiscussionScreen> {
                   ),
                   onPressed: () {
                     if (replyController.text.trim().isNotEmpty) {
+                      setState(() {
+                        topic.repliesCount += 1;
+                      });
                       Navigator.pop(ctx);
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Jawaban berhasil dikirimkan! Terima kasih telah membantu sesama siswa. 🎉'),
                           backgroundColor: Color(0xFF059669),
+                          behavior: SnackBarBehavior.floating,
                         ),
                       );
                     }

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatter.dart';
 import '../../models/order_model.dart';
+import '../../providers/package_provider.dart';
 import '../../services/package_service.dart';
 
 class OrderHistoryScreen extends StatefulWidget {
@@ -291,28 +292,69 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                     },
                   )
                 else if (order.isPending)
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryBlue,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    onPressed: () {
-                      if (order.snapRedirectUrl != null && order.snapRedirectUrl!.isNotEmpty) {
-                        Navigator.pushNamed(
-                          context,
-                          '/midtrans_payment',
-                          arguments: {
-                            'payment_url': order.snapRedirectUrl,
-                            'order_id': order.orderNumber,
-                            'package_title': order.packageTitle,
-                            'amount': order.amount,
-                          },
-                        );
-                      }
-                    },
-                    child: const Text('Bayar Sekarang', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  Row(
+                    children: [
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFFD97706),
+                          side: const BorderSide(color: Color(0xFFD97706)),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          minimumSize: const Size(0, 32),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        icon: const Icon(Icons.flash_on_rounded, size: 14),
+                        label: const Text('Simulasi ⚡', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                        onPressed: () async {
+                          final pkgProvider = Provider.of<PackageProvider>(context, listen: false);
+                          await pkgProvider.simulatePay(order.id, fallbackPackage: order.package);
+                          _loadOrders();
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Pembayaran order ${order.orderNumber} berhasil diverifikasi! Paket aktif.'),
+                                backgroundColor: const Color(0xFF10B981),
+                                duration: const Duration(seconds: 3),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 6),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryBlue,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          minimumSize: const Size(0, 32),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        onPressed: () {
+                          if (order.snapRedirectUrl != null && order.snapRedirectUrl!.isNotEmpty) {
+                            Navigator.pushNamed(
+                              context,
+                              '/midtrans_payment',
+                              arguments: {
+                                'payment_url': order.snapRedirectUrl,
+                                'order_id': order.orderNumber,
+                                'package_title': order.packageTitle,
+                                'amount': order.amount,
+                              },
+                            );
+                          } else {
+                            Navigator.pushNamed(
+                              context,
+                              '/midtrans_payment',
+                              arguments: {
+                                'order_id': order.orderNumber,
+                                'package_title': order.packageTitle,
+                                'amount': order.amount,
+                              },
+                            );
+                          }
+                        },
+                        child: const Text('Bayar Sekarang', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
                   ),
               ],
             ),

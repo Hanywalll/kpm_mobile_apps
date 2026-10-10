@@ -170,16 +170,29 @@ class _PackageListScreenState extends State<PackageListScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: provider.isEnrolled(pkg.id)
+                        ? const Color(0xFF10B981)
+                        : Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: Text(
-                    pkg.hasDiscount ? 'DISKON SPESIAL' : 'PROGRAM UTAMA',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 9,
-                      fontWeight: FontWeight.w800,
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (provider.isEnrolled(pkg.id)) ...[
+                        const Icon(Icons.check_circle_rounded, size: 10, color: Colors.white),
+                        const SizedBox(width: 3),
+                      ],
+                      Text(
+                        provider.isEnrolled(pkg.id)
+                            ? 'AKTIF'
+                            : (pkg.hasDiscount ? 'DISKON SPESIAL' : 'PROGRAM UTAMA'),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const Spacer(),
@@ -275,80 +288,97 @@ class _PackageListScreenState extends State<PackageListScreen> {
                     ),
                     Row(
                       children: [
-                        // Cart button
-                        Container(
-                          height: 36,
-                          width: 36,
-                          decoration: BoxDecoration(
-                            color: provider.isInCart(pkg.id)
-                                ? AppTheme.accentGreen.withValues(alpha: 0.12)
-                                : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: provider.isInCart(pkg.id)
-                                  ? AppTheme.accentGreen
-                                  : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                        if (provider.isEnrolled(pkg.id)) ...[
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF10B981),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              minimumSize: const Size(0, 36),
                             ),
-                          ),
-                          child: IconButton(
-                            padding: EdgeInsets.zero,
                             onPressed: () {
-                              final added = provider.toggleCart(pkg);
-                              if (added) {
-                                AppModal.showCartSuccess(
-                                  context,
-                                  package: pkg,
-                                  onGoToCart: () => Navigator.pushNamed(context, '/cart'),
-                                );
-                              } else {
-                                AppModal.showInfo(
-                                  context,
-                                  title: 'Dihapus dari Keranjang',
-                                  message: '${pkg.title} telah dihapus dari keranjang belajar Anda.',
-                                );
-                              }
+                              Navigator.pushNamed(context, '/belajar');
                             },
-                            icon: Icon(
-                              provider.isInCart(pkg.id) ? Icons.shopping_cart_rounded : Icons.add_shopping_cart_rounded,
-                              size: 18,
-                              color: provider.isInCart(pkg.id) ? AppTheme.accentGreen : AppTheme.primaryBlue,
+                            icon: const Icon(Icons.play_circle_fill_rounded, size: 16),
+                            label: const Text('Buka Kelas', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                          ),
+                        ] else ...[
+                          // Cart button
+                          Container(
+                            height: 36,
+                            width: 36,
+                            decoration: BoxDecoration(
+                              color: provider.isInCart(pkg.id)
+                                  ? AppTheme.accentGreen.withValues(alpha: 0.12)
+                                  : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: provider.isInCart(pkg.id)
+                                    ? AppTheme.accentGreen
+                                    : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                              ),
                             ),
-                            tooltip: provider.isInCart(pkg.id) ? 'Hapus dari Keranjang' : 'Tambah ke Keranjang',
+                            child: IconButton(
+                              padding: EdgeInsets.zero,
+                              onPressed: () {
+                                final added = provider.toggleCart(pkg);
+                                if (added) {
+                                  AppModal.showCartSuccess(
+                                    context,
+                                    package: pkg,
+                                    onGoToCart: () => Navigator.pushNamed(context, '/cart'),
+                                  );
+                                } else {
+                                  AppModal.showInfo(
+                                    context,
+                                    title: 'Dihapus dari Keranjang',
+                                    message: '${pkg.title} telah dihapus dari keranjang belajar Anda.',
+                                  );
+                                }
+                              },
+                              icon: Icon(
+                                provider.isInCart(pkg.id) ? Icons.shopping_cart_rounded : Icons.add_shopping_cart_rounded,
+                                size: 18,
+                                color: provider.isInCart(pkg.id) ? AppTheme.accentGreen : AppTheme.primaryBlue,
+                              ),
+                              tooltip: provider.isInCart(pkg.id) ? 'Hapus dari Keranjang' : 'Tambah ke Keranjang',
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 6),
-                        OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppTheme.primaryBlue,
-                            side: const BorderSide(color: AppTheme.primaryBlue),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                            minimumSize: const Size(0, 36),
+                          const SizedBox(width: 6),
+                          OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppTheme.primaryBlue,
+                              side: const BorderSide(color: AppTheme.primaryBlue),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                              minimumSize: const Size(0, 36),
+                            ),
+                            onPressed: () {
+                              provider.fetchPackageDetail(pkg.id);
+                              Navigator.pushNamed(context, '/package_detail', arguments: pkg);
+                            },
+                            child: const Text('Detail', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
                           ),
-                          onPressed: () {
-                            provider.fetchPackageDetail(pkg.id);
-                            Navigator.pushNamed(context, '/package_detail', arguments: pkg);
-                          },
-                          child: const Text('Detail', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
-                        ),
-                        const SizedBox(width: 6),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryBlue,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            minimumSize: const Size(0, 36),
+                          const SizedBox(width: 6),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryBlue,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              minimumSize: const Size(0, 36),
+                            ),
+                            onPressed: () {
+                              if (!AdminPreviewGuard.checkActionAllowed(context, actionName: 'membeli paket belajar')) {
+                                return;
+                              }
+                              provider.fetchPackageDetail(pkg.id);
+                              Navigator.pushNamed(context, '/checkout', arguments: pkg);
+                            },
+                            child: const Text('Beli', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
                           ),
-                          onPressed: () {
-                            if (!AdminPreviewGuard.checkActionAllowed(context, actionName: 'membeli paket belajar')) {
-                              return;
-                            }
-                            provider.fetchPackageDetail(pkg.id);
-                            Navigator.pushNamed(context, '/checkout', arguments: pkg);
-                          },
-                          child: const Text('Beli', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
-                        ),
+                        ],
                       ],
                     ),
                   ],
