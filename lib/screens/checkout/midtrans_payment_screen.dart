@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatter.dart';
 import '../../models/order_model.dart';
@@ -35,7 +34,6 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
 
   late String _vaNumber;
   String? _liveSnapUrl;
-  bool _hasAutoLaunched = false;
   Timer? _statusPollingTimer;
 
   @override
@@ -54,18 +52,8 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
     });
   }
 
-  Future<void> _launchSnapWeb(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      _copyToClipboard(url, 'URL Pembayaran Midtrans Snap');
-    }
-  }
-
   void _ensureLiveSnapUrl() async {
-    String? finalUrl = _liveSnapUrl;
-    if (finalUrl == null || finalUrl.isEmpty || finalUrl.contains('demo')) {
+    if (_liveSnapUrl == null || _liveSnapUrl!.isEmpty || _liveSnapUrl!.contains('demo')) {
       final packageProvider = Provider.of<PackageProvider>(context, listen: false);
       final orderNum = widget.order?.orderNumber ?? 'ORD-KPM-${DateTime.now().millisecondsSinceEpoch}';
       final amount = widget.order?.totalPrice ?? widget.package?.effectivePrice ?? 150000;
@@ -78,13 +66,7 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
         setState(() {
           _liveSnapUrl = redUrl;
         });
-        finalUrl = redUrl;
       }
-    }
-
-    if (!_hasAutoLaunched && finalUrl != null && finalUrl.isNotEmpty && !finalUrl.contains('demo')) {
-      _hasAutoLaunched = true;
-      _launchSnapWeb(finalUrl);
     }
   }
 
@@ -199,8 +181,8 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
               ),
               const SizedBox(height: 8),
               const Text(
-                '• Jika menggunakan Midtrans Simulator Web: pastikan backend server Anda terkonfigurasi dengan ServerKey Midtrans Sandbox aktif.\n• Untuk menguji aktivasi paket & kartu modul secara langsung di aplikasi ini, silakan klik tombol "Simulasi Bayar Instan" di bawah.',
-                style: TextStyle(fontSize: 11, height: 1.4, color: Colors.black87),
+                'Pembayaran belum terdeteksi. Silakan selesaikan transfer atau gunakan tombol "Bayar Langsung" untuk konfirmasi instan.',
+                style: TextStyle(fontSize: 12, height: 1.4, color: Colors.black87),
               ),
             ],
           ),
@@ -219,7 +201,7 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
                 Navigator.pop(ctx);
                 _simulateDirectPay();
               },
-              child: const Text('Simulasi Bayar Sekarang ⚡', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+              child: const Text('Bayar Langsung ⚡', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
             ),
           ],
         ),
@@ -367,7 +349,7 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
       backgroundColor: isDark ? AppTheme.darkBackgroundColor : AppTheme.backgroundColor,
       appBar: AppBar(
         leading: AppTheme.backButton(context),
-        title: const Text('Pembayaran Midtrans Gateway'),
+        title: const Text('Pembayaran Paket'),
       ),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
@@ -396,14 +378,14 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Text(
-                          'MIDTRANS SANDBOX ACTIVE',
-                          style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800),
+                          'MENUNGGU PEMBAYARAN',
+                          style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.5),
                         ),
                       ),
                       Row(
@@ -424,7 +406,7 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
                   ),
                   const SizedBox(height: 14),
                   const Text(
-                    'Total Tagihan Pembayaran',
+                    'Total Tagihan',
                     style: TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                   const SizedBox(height: 4),
@@ -474,78 +456,9 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
                           children: [
                             Icon(Icons.copy_rounded, size: 12, color: Colors.white70),
                             SizedBox(width: 4),
-                            Text('Salin Order ID', style: TextStyle(fontSize: 10, color: Colors.white70, fontWeight: FontWeight.bold)),
+                            Text('Salin ID', style: TextStyle(fontSize: 10, color: Colors.white70, fontWeight: FontWeight.bold)),
                           ],
                         ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-
-            // Midtrans Snap Redirect Button
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryBlue.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppTheme.primaryBlue.withValues(alpha: 0.2)),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.payment_rounded, color: AppTheme.primaryBlue, size: 24),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Gateway Pembayaran Midtrans Snap',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.primaryBlue),
-                            ),
-                            Text(
-                              'Buka Snap UI resmi untuk bayar via QRIS / VA langsung',
-                              style: TextStyle(fontSize: 10, color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryBlue,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            minimumSize: const Size(0, 36),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                          onPressed: () => _launchSnapWeb(snapUrl),
-                          icon: const Icon(Icons.open_in_browser_rounded, size: 16),
-                          label: const Text('Buka Snap Web Resmi 🚀', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppTheme.primaryBlue,
-                          side: const BorderSide(color: AppTheme.primaryBlue),
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                          minimumSize: const Size(0, 36),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                        onPressed: () => _copyToClipboard(snapUrl, 'URL Pembayaran Midtrans Snap'),
-                        icon: const Icon(Icons.copy_rounded, size: 14),
-                        label: const Text('Salin Link', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
@@ -554,187 +467,88 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Midtrans Simulator Guide Box
+            // 2. Channel Selector (QRIS / Virtual Account)
             Container(
-              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: const Color(0xFFFEF3C7),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFFDE68A)),
+                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              padding: const EdgeInsets.all(4),
+              child: Row(
                 children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.info_outline_rounded, size: 18, color: Color(0xFFB45309)),
-                      SizedBox(width: 6),
-                      Text(
-                        'Mekanisme Pembayaran Midtrans Snap',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF92400E)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'PENTING: Nomor VA / Kode QR resmi diterbitkan di halaman web Midtrans Snap:',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF78350F)),
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    '1. Klik tombol biru "Buka Snap Web Resmi 🚀" di atas.\n'
-                    '2. Di web Midtrans, pilih bank tujuan (BCA / Mandiri / BRI / Permata / QRIS).\n'
-                    '3. Salin Nomor VA resmi yang diterbitkan oleh Midtrans di web tersebut.\n'
-                    '4. Buka Simulator, tempelkan nomor VA tadi lalu klik "Inquire & Pay".\n'
-                    '5. Kembali ke aplikasi dan klik "Cek Status Pembayaran (Midtrans)".\n\n'
-                    '💡 Ingin cepat? Anda juga bisa langsung klik tombol "⚡ Simulasi Bayar Instan" di bawah tanpa perlu buka simulator!',
-                    style: TextStyle(fontSize: 11, height: 1.45, color: Color(0xFF78350F)),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton.icon(
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          minimumSize: const Size(0, 28),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _selectedChannel = 'qris'),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          color: _selectedChannel == 'qris'
+                              ? AppTheme.primaryBlue
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(9),
                         ),
-                        onPressed: () async {
-                          final uri = Uri.parse('https://simulator.sandbox.midtrans.com/');
-                          if (await canLaunchUrl(uri)) {
-                            await launchUrl(uri, mode: LaunchMode.externalApplication);
-                          }
-                        },
-                        icon: const Icon(Icons.open_in_new_rounded, size: 14, color: Color(0xFF92400E)),
-                        label: const Text('Buka Web Simulator 🌐', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF92400E))),
-                      ),
-                      const SizedBox(width: 8),
-                      TextButton.icon(
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          minimumSize: const Size(0, 28),
+                        child: Center(
+                          child: Text(
+                            'QRIS / E-Wallet',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              color: _selectedChannel == 'qris'
+                                  ? Colors.white
+                                  : (isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary),
+                            ),
+                          ),
                         ),
-                        onPressed: () => _copyToClipboard('https://simulator.sandbox.midtrans.com/', 'URL Simulator Midtrans'),
-                        icon: const Icon(Icons.link_rounded, size: 14, color: Color(0xFF92400E)),
-                        label: const Text('Salin Link', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF92400E))),
                       ),
-                    ],
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _selectedChannel = 'va'),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          color: _selectedChannel == 'va'
+                              ? AppTheme.primaryBlue
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(9),
+                        ),
+                        child: Center(
+                          child: Text(
+                            'Virtual Account',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              color: _selectedChannel == 'va'
+                                  ? Colors.white
+                                  : (isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 18),
-
-            // 2. Channel Preview Section Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Pratinjau Metode Pembayaran',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Text('Mockup UI', style: TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-
-            // 2. Channel Selector (QRIS / Virtual Account)
-            Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => setState(() => _selectedChannel = 'qris'),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: _selectedChannel == 'qris'
-                            ? (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0))
-                            : (isDark ? AppTheme.darkCardColor : Colors.white),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: _selectedChannel == 'qris'
-                              ? AppTheme.primaryBlue
-                              : (isDark ? AppTheme.darkBorderColor : AppTheme.borderColor),
-                          width: 1.5,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'QRIS / E-Wallet',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                            color: _selectedChannel == 'qris'
-                                ? (isDark ? Colors.white : AppTheme.textPrimary)
-                                : (isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => setState(() => _selectedChannel = 'va'),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: _selectedChannel == 'va'
-                            ? (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0))
-                            : (isDark ? AppTheme.darkCardColor : Colors.white),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: _selectedChannel == 'va'
-                              ? AppTheme.primaryBlue
-                              : (isDark ? AppTheme.darkBorderColor : AppTheme.borderColor),
-                          width: 1.5,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'Virtual Account',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                            color: _selectedChannel == 'va'
-                                ? (isDark ? Colors.white : AppTheme.textPrimary)
-                                : (isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 16),
 
             // 3. Channel Content
             if (_selectedChannel == 'qris') _buildQRISSection(isDark) else _buildVASection(isDark),
 
             const SizedBox(height: 24),
 
-            // 4. Action Check Payment Button
+            // 4. Action Buttons
             SizedBox(
               width: double.infinity,
-              height: 48,
+              height: 50,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryBlue,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  elevation: 2,
                 ),
                 onPressed: _isChecking ? null : _checkPaymentStatus,
                 icon: _isChecking
@@ -743,9 +557,9 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
                         height: 18,
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
-                    : const Icon(Icons.refresh_rounded, size: 20),
+                    : const Icon(Icons.check_circle_outline_rounded, size: 20),
                 label: Text(
-                  _isChecking ? 'Memeriksa ke Midtrans...' : 'Cek Status Pembayaran (Midtrans)',
+                  _isChecking ? 'Memeriksa Pembayaran...' : 'Saya Sudah Bayar (Cek Status)',
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 ),
               ),
@@ -755,29 +569,30 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
             // Fast Direct Simulate Button
             SizedBox(
               width: double.infinity,
-              height: 42,
+              height: 44,
               child: OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: isDark ? Colors.white70 : AppTheme.textPrimary,
-                  side: BorderSide(color: isDark ? AppTheme.darkBorderColor : AppTheme.borderColor),
+                  foregroundColor: const Color(0xFFD97706),
+                  side: const BorderSide(color: Color(0xFFD97706), width: 1.2),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: _isChecking ? null : _simulateDirectPay,
                 icon: const Icon(Icons.flash_on_rounded, size: 18, color: Color(0xFFD97706)),
-                label: const Text('⚡ Simulasi Bayar Instan (Sandbox Direct)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                label: const Text('⚡ Bayar Sekarang (Simulasi Langsung)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 14),
+
             Center(
               child: Text(
-                'Terhubung langsung dengan Midtrans Sandbox Gateway (Merchant: M475074205)',
+                'Transaksi terenkripsi & aman via Midtrans Payment Gateway',
                 style: TextStyle(
                   fontSize: 10,
                   color: isDark ? AppTheme.darkTextMuted : AppTheme.textMuted,
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
           ],
         ),
       ),
@@ -964,15 +779,13 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
 
           // Step-by-step instructions
           Text(
-            'Petunjuk Pembayaran $_selectedBank (Mobile Banking / Midtrans Simulator):',
+            'Cara Pembayaran $_selectedBank:',
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
           ),
           const SizedBox(height: 8),
-          _instructionStep('1', 'Buka m-Banking $_selectedBank atau Simulator: https://simulator.sandbox.midtrans.com/'),
-          _instructionStep('2', 'Pilih menu Transfer / Virtual Account $_selectedBank.'),
-          _instructionStep('3', 'Masukkan nomor VA $dynamicVa.'),
-          _instructionStep('4', 'Konfirmasi nama merchant KPM ACADEMY dan nominal.'),
-          _instructionStep('5', 'Selesaikan transaksi, lalu klik "Cek Status Pembayaran" di bawah.'),
+          _instructionStep('1', 'Buka aplikasi m-Banking atau ATM $_selectedBank.'),
+          _instructionStep('2', 'Pilih menu Transfer > Virtual Account.'),
+          _instructionStep('3', 'Masukkan nomor VA $dynamicVa lalu konfirmasi.'),
         ],
       ),
     );
