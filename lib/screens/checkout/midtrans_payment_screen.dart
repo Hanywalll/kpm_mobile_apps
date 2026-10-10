@@ -35,6 +35,8 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
 
   late String _vaNumber;
   String? _liveSnapUrl;
+  bool _hasAutoLaunched = false;
+  Timer? _statusPollingTimer;
 
   @override
   void initState() {
@@ -46,13 +48,24 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
     _vaNumber = '80777$paddedSeed';
 
     _startTimer();
+    _startPolling();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _ensureLiveSnapUrl();
     });
   }
 
+  Future<void> _launchSnapWeb(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      _copyToClipboard(url, 'URL Pembayaran Midtrans Snap');
+    }
+  }
+
   void _ensureLiveSnapUrl() async {
-    if (_liveSnapUrl == null || _liveSnapUrl!.isEmpty || _liveSnapUrl!.contains('demo')) {
+    String? finalUrl = _liveSnapUrl;
+    if (finalUrl == null || finalUrl.isEmpty || finalUrl.contains('demo')) {
       final packageProvider = Provider.of<PackageProvider>(context, listen: false);
       final orderNum = widget.order?.orderNumber ?? 'ORD-KPM-${DateTime.now().millisecondsSinceEpoch}';
       final amount = widget.order?.totalPrice ?? widget.package?.effectivePrice ?? 150000;
@@ -65,8 +78,39 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
         setState(() {
           _liveSnapUrl = redUrl;
         });
+        finalUrl = redUrl;
       }
     }
+
+    if (!_hasAutoLaunched && finalUrl != null && finalUrl.isNotEmpty && !finalUrl.contains('demo')) {
+      _hasAutoLaunched = true;
+      _launchSnapWeb(finalUrl);
+    }
+  }
+
+  void _startPolling() {
+    _statusPollingTimer = Timer.periodic(const Duration(seconds: 4), (timer) async {
+      if (!mounted) return;
+      final packageProvider = Provider.of<PackageProvider>(context, listen: false);
+      final orderId = widget.order?.id ?? '';
+      final orderNum = widget.order?.orderNumber ?? '';
+      if (orderNum.isNotEmpty) {
+        final isPaid = await packageProvider.checkMidtransStatus(orderId, orderNum);
+        if (isPaid && mounted) {
+          timer.cancel();
+          if (widget.items != null && widget.items!.isNotEmpty) {
+            for (final item in widget.items!) {
+              packageProvider.enrollPackage(item);
+            }
+          } else if (widget.package != null) {
+            packageProvider.enrollPackage(widget.package!);
+          } else if (widget.order?.package != null) {
+            packageProvider.enrollPackage(widget.order!.package!);
+          }
+          _showSuccessDialog();
+        }
+      }
+    });
   }
 
   void _startTimer() {
@@ -86,6 +130,7 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
   @override
   void dispose() {
     _countdownTimer.cancel();
+    _statusPollingTimer?.cancel();
     super.dispose();
   }
 
@@ -484,14 +529,7 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
                             minimumSize: const Size(0, 36),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
-                          onPressed: () async {
-                            final uri = Uri.parse(snapUrl);
-                            if (await canLaunchUrl(uri)) {
-                              await launchUrl(uri, mode: LaunchMode.externalApplication);
-                            } else {
-                              _copyToClipboard(snapUrl, 'URL Pembayaran Midtrans Snap');
-                            }
-                          },
+                          onPressed: () => _launchSnapWeb(snapUrl),
                           icon: const Icon(Icons.open_in_browser_rounded, size: 16),
                           label: const Text('Buka Snap Web Resmi 🚀', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                         ),
