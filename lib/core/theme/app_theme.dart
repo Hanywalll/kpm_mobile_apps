@@ -4,13 +4,17 @@ import 'package:google_fonts/google_fonts.dart';
 class AppTheme {
   // Modern Tech / Royal Blue Palette (#1D4ED8 / #2563EB)
   static const Color primaryBlue = Color(0xFF1D4ED8); // Royal Blue
-  static const Color primaryBlueDark = Color(0xFF1E3A8A); // Deep Navy Blue
+  static const Color primaryBlueDark = Color(0xFF0D3B66); // Deep Professional Blue
+  static const Color primaryBlueMedium = Color(0xFF2563EB); // Medium Blue for buttons
   static const Color primaryBlueLight = Color(0xFF3B82F6); // Bright Blue
+  static const Color skyBlueAccent = Color(0xFF38BDF8); // Light Sky Blue for accents
   static const Color secondaryBlue = Color(0xFFEFF6FF); // Soft Blue Tint
+  static const Color headerDeepBlue = Color(0xFF092957); // Immersive Status Bar Deep Blue
+  static const Color headerNavy = Color(0xFF0C3875);
   
   // Backward compatibility aliases
   static const Color primaryGreen = Color(0xFF1D4ED8);
-  static const Color primaryGreenDark = Color(0xFF1E3A8A);
+  static const Color primaryGreenDark = Color(0xFF0D3B66);
   static const Color secondaryGreen = Color(0xFFEFF6FF);
   
   static const Color kpmNavy = Color(0xFF0F172A); // Slate 900
@@ -72,6 +76,64 @@ class AppTheme {
           ),
         ),
       ),
+    );
+  }
+
+  // Neumorphic-Lite Card Decoration Helper
+  static BoxDecoration neumorphicBoxDecoration({
+    BuildContext? context,
+    Color? color,
+    BorderRadius? borderRadius,
+    bool pressed = false,
+  }) {
+    final bool isDark = context != null ? Theme.of(context).brightness == Brightness.dark : false;
+    final Color effectiveBg = color ?? (isDark ? darkCardColor : Colors.white);
+    final BorderRadius rad = borderRadius ?? BorderRadius.circular(20);
+
+    if (isDark) {
+      return BoxDecoration(
+        color: effectiveBg,
+        borderRadius: rad,
+        border: Border.all(color: darkBorderColor, width: 1.0),
+        boxShadow: pressed
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.35),
+                  blurRadius: 10,
+                  offset: const Offset(2, 4),
+                ),
+              ],
+      );
+    }
+
+    return BoxDecoration(
+      color: effectiveBg,
+      borderRadius: rad,
+      border: Border.all(color: const Color(0xFFF1F5F9), width: 1.0),
+      boxShadow: pressed
+          ? [
+              BoxShadow(
+                color: const Color(0xFF94A3B8).withValues(alpha: 0.15),
+                blurRadius: 4,
+                offset: const Offset(1, 1),
+              ),
+            ]
+          : [
+              // Soft dark drop shadow bottom-right
+              BoxShadow(
+                color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+                blurRadius: 14,
+                spreadRadius: 1,
+                offset: const Offset(0, 4),
+              ),
+              // Soft white bevel top-left
+              BoxShadow(
+                color: Colors.white.withValues(alpha: 0.8),
+                blurRadius: 10,
+                offset: const Offset(-2, -2),
+              ),
+            ],
     );
   }
 
@@ -151,6 +213,24 @@ class AppTheme {
   }
 
   // Modern Gradients
+  static const LinearGradient deepBlueHeaderGradient = LinearGradient(
+    colors: [Color(0xFF092957), Color(0xFF0D3B66), Color(0xFF1D4ED8)],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
+
+  static const LinearGradient splashAmberGradient = LinearGradient(
+    colors: [Color(0xFFD9480F), Color(0xFFE8590C), Color(0xFFF76707), Color(0xFFF59E0B)],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
+
+  static const LinearGradient softBlueCardGradient = LinearGradient(
+    colors: [Color(0xFFEFF6FF), Color(0xFFDBEAFE)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
   static const LinearGradient blueGradient = LinearGradient(
     colors: [Color(0xFF1E40AF), Color(0xFF2563EB)],
     begin: Alignment.topLeft,

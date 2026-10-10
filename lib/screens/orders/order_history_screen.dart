@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatter.dart';
 import '../../models/order_model.dart';
-import '../../providers/package_provider.dart';
 import '../../services/package_service.dart';
 
 class OrderHistoryScreen extends StatefulWidget {

@@ -204,6 +204,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   isLoading: authProvider.state == AuthState.loading,
                   onPressed: _handleRegister,
                 ),
+                const SizedBox(height: 14),
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 48),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  icon: const Icon(Icons.g_mobiledata_rounded, size: 24),
+                  label: const Text('Daftar dengan Akun Google', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  onPressed: _handleGoogleLogin,
+                ),
               ],
             ),
           ),

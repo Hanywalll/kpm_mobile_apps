@@ -146,7 +146,7 @@ class PackageService {
           id: model.id,
           userId: model.userId,
           packageId: model.packageId,
-          orderNumber: (model.orderNumber?.isNotEmpty ?? false) ? model.orderNumber! : orderNum,
+          orderNumber: model.orderNumber.isNotEmpty ? model.orderNumber : orderNum,
           totalPrice: model.totalPrice > 0 ? model.totalPrice : amount,
           paymentStatus: model.paymentStatus,
           paymentUrl: snapUrl,

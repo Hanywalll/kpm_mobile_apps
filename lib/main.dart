@@ -29,7 +29,7 @@ import 'screens/cart/cart_screen.dart';
 import 'screens/checkout/checkout_screen.dart';
 import 'screens/checkout/midtrans_payment_screen.dart';
 import 'screens/checkout/payment_receipt_screen.dart';
-import 'screens/enroll/enroll_key_screen.dart';
+import 'screens/discussion/discussion_screen.dart';
 import 'screens/features/all_features_screen.dart';
 import 'screens/leaderboard/leaderboard_screen.dart';
 import 'screens/live_class/live_class_screen.dart';
@@ -46,6 +46,7 @@ import 'screens/tryout/exam_screen.dart';
 import 'screens/tryout/pretest_screen.dart';
 import 'screens/tryout/result_screen.dart';
 import 'screens/tryout/review_screen.dart';
+import 'screens/tutor/tutor_screen.dart';
 import 'screens/video/video_list_screen.dart';
 import 'screens/video/video_player_screen.dart';
 import 'screens/voucher/claim_voucher_screen.dart';
@@ -127,6 +128,9 @@ class KPMApp extends StatelessWidget {
               '/live_class': (context) => const LiveClassScreen(),
               '/order_history': (context) => const OrderHistoryScreen(),
               '/claim_voucher': (context) => const ClaimVoucherScreen(),
+              '/voucher': (context) => const ClaimVoucherScreen(),
+              '/discussion': (context) => const DiscussionScreen(),
+              '/tutor': (context) => const TutorScreen(),
               '/ai_chat': (context) => const ChatScreen(),
               '/enroll_key': (context) => const ClaimVoucherScreen(),
               '/all_features': (context) => const AllFeaturesScreen(),

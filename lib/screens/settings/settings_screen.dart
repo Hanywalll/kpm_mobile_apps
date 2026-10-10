@@ -4,12 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_theme.dart';
-import '../../models/notification_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/practice_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../services/local_notification_service.dart';
-import '../../services/notification_service.dart';
 import '../../services/support_service.dart';
 
 class SettingsScreen extends StatefulWidget {

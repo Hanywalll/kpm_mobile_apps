@@ -12,6 +12,7 @@ import '../../models/package_model.dart';
 import '../../models/video_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/package_provider.dart';
+import '../../providers/theme_provider.dart';
 import '../../services/admin_service.dart';
 import '../../services/dashboard_service.dart';
 import '../../services/video_service.dart';
@@ -1170,13 +1171,122 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             onTap: () => Navigator.pushNamed(context, '/home'),
             isDark: isDark,
           ),
-          _buildSettingsTile(
-            icon: Icons.sync_rounded,
-            title: 'Sinkronisasi Ulang Database',
-            subtitle: 'Muat ulang seluruh paket, live class, dan data transaksi',
-            onTap: _loadAllAdminData,
-            isDark: isDark,
+          // Header Gradient Theme Customizer
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? AppTheme.darkCardColor : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: isDark ? AppTheme.darkBorderColor : AppTheme.borderColor),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.palette_rounded, color: AppTheme.primaryBlue, size: 20),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Kustomisasi Tema Header Mobile',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                            ),
+                          ),
+                          Text(
+                            'Ubah gradasi warna header aplikasi mobile secara instan',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Consumer<ThemeProvider>(
+                  builder: (context, themeProvider, _) {
+                    return Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: ThemeProvider.headerPresets.map((preset) {
+                        final isSelected = themeProvider.headerThemeKey == preset.key;
+                        return InkWell(
+                          onTap: () {
+                            themeProvider.setHeaderTheme(preset.key);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Tema Header berhasil diubah: ${preset.name}'),
+                                backgroundColor: preset.primaryAccent,
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: preset.colors,
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isSelected ? Colors.white : Colors.transparent,
+                                width: 2,
+                              ),
+                              boxShadow: [
+                                if (isSelected)
+                                  BoxShadow(
+                                    color: preset.primaryAccent.withValues(alpha: 0.5),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (isSelected) ...[
+                                  const Icon(Icons.check_circle_rounded, color: Colors.white, size: 14),
+                                  const SizedBox(width: 6),
+                                ],
+                                Text(
+                                  preset.name,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
+
           _buildSettingsTile(
             icon: Icons.logout_rounded,
             title: 'Keluar dari Sesi Administrator',

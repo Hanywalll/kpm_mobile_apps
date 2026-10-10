@@ -83,24 +83,49 @@ class _BelajarScreenState extends State<BelajarScreen> with SingleTickerProvider
   // Pipih / Compact Card Kelas Saya
   Widget _buildKelasSayaSection(bool isDark) {
     final packageProvider = Provider.of<PackageProvider>(context);
-    final packages = packageProvider.packages;
+    final enrolled = packageProvider.enrolledPackages;
+    final displayList = enrolled.isNotEmpty ? enrolled : packageProvider.packages;
 
-    if (packageProvider.isLoading && packages.isEmpty) {
+    if (packageProvider.isLoading && displayList.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (packages.isEmpty) {
+    if (displayList.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.menu_book_outlined, size: 48, color: isDark ? AppTheme.darkTextMuted : AppTheme.textMuted),
-            const SizedBox(height: 8),
-            Text(
-              'Belum ada kelas yang diikuti',
-              style: TextStyle(fontSize: 13, color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.menu_book_outlined, size: 56, color: isDark ? AppTheme.darkTextMuted : AppTheme.textMuted),
+              const SizedBox(height: 12),
+              Text(
+                'Belum ada kelas yang diikuti',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Pilih paket belajar atau klaim voucher untuk mulai belajar!',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 12, color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: () => Navigator.pushNamed(context, '/package_list'),
+                icon: const Icon(Icons.school_rounded, size: 16),
+                label: const Text('Eksplor Paket Belajar'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryBlue,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -108,9 +133,10 @@ class _BelajarScreenState extends State<BelajarScreen> with SingleTickerProvider
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       physics: const ClampingScrollPhysics(),
-      itemCount: packages.length,
+      itemCount: displayList.length,
       itemBuilder: (context, index) {
-        final pkg = packages[index];
+        final pkg = displayList[index];
+        final isUserEnrolled = packageProvider.isEnrolled(pkg.id);
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -134,15 +160,33 @@ class _BelajarScreenState extends State<BelajarScreen> with SingleTickerProvider
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          pkg.title,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                pkg.title,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (isUserEnrolled)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text(
+                                  'AKTIF',
+                                  style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Colors.green),
+                                ),
+                              ),
+                          ],
                         ),
                         const SizedBox(height: 2),
                         Text(

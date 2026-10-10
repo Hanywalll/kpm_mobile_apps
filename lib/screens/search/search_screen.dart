@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatter.dart';
-import '../../models/package_model.dart';
 import '../../models/video_model.dart';
 import '../../providers/package_provider.dart';
 import '../../services/video_service.dart';

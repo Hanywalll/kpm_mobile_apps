@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatter.dart';
 import '../../models/order_model.dart';
@@ -99,21 +100,60 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
     setState(() => _isChecking = false);
 
     if (isPaid && mounted) {
+      // Auto enroll courses immediately
+      if (widget.items != null && widget.items!.isNotEmpty) {
+        for (final item in widget.items!) {
+          packageProvider.enrollPackage(item);
+        }
+      } else if (widget.package != null) {
+        packageProvider.enrollPackage(widget.package!);
+      }
       _showSuccessDialog();
     } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(
-            'Midtrans: Transaksi masih pending / belum dibayar. Silakan lakukan pembayaran di Simulator Midtrans atau klik Simulasi Cepat.',
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(
+            children: [
+              Icon(Icons.info_outline_rounded, color: Color(0xFFD97706)),
+              SizedBox(width: 8),
+              Text('Status Pembayaran', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+            ],
           ),
-          backgroundColor: const Color(0xFFD97706),
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 4),
-          action: SnackBarAction(
-            label: 'Bayar Cepat',
-            textColor: Colors.white,
-            onPressed: _simulateDirectPay,
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Transaksi saat ini masih berstatus PENDING (Menunggu Pembayaran).',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '• Jika menggunakan Midtrans Simulator Web: pastikan backend server Anda terkonfigurasi dengan ServerKey Midtrans Sandbox aktif.\n• Untuk menguji aktivasi paket & kartu modul secara langsung di aplikasi ini, silakan klik tombol "Simulasi Bayar Instan" di bawah.',
+                style: TextStyle(fontSize: 11, height: 1.4, color: Colors.black87),
+              ),
+            ],
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Tutup'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryBlue,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () {
+                Navigator.pop(ctx);
+                _simulateDirectPay();
+              },
+              child: const Text('Simulasi Bayar Sekarang ⚡', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+            ),
+          ],
         ),
       );
     }
@@ -123,7 +163,19 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
     setState(() => _isChecking = true);
     final packageProvider = Provider.of<PackageProvider>(context, listen: false);
     final orderId = widget.order?.id ?? 'ord_demo_1';
-    await packageProvider.simulatePay(orderId);
+    
+    // Auto-enroll courses immediately into student account
+    if (widget.items != null && widget.items!.isNotEmpty) {
+      for (final item in widget.items!) {
+        packageProvider.enrollPackage(item);
+      }
+    } else if (widget.package != null) {
+      packageProvider.enrollPackage(widget.package!);
+    } else if (widget.order?.package != null) {
+      packageProvider.enrollPackage(widget.order!.package!);
+    }
+
+    await packageProvider.simulatePay(orderId, fallbackPackage: widget.package);
     setState(() => _isChecking = false);
 
     if (mounted) {
@@ -133,6 +185,18 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
 
   void _showSuccessDialog() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final packageProvider = Provider.of<PackageProvider>(context, listen: false);
+
+    // Auto-enroll courses immediately into student account
+    if (widget.items != null && widget.items!.isNotEmpty) {
+      for (final item in widget.items!) {
+        packageProvider.enrollPackage(item);
+      }
+    } else if (widget.package != null) {
+      packageProvider.enrollPackage(widget.package!);
+    } else if (widget.order?.package != null) {
+      packageProvider.enrollPackage(widget.order!.package!);
+    }
 
     showDialog(
       context: context,
@@ -362,35 +426,67 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: AppTheme.primaryBlue.withValues(alpha: 0.2)),
               ),
-              child: Row(
+              child: Column(
                 children: [
-                  const Icon(Icons.payment_rounded, color: AppTheme.primaryBlue, size: 24),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Gateway Pembayaran Midtrans Snap',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.primaryBlue),
+                  Row(
+                    children: [
+                      const Icon(Icons.payment_rounded, color: AppTheme.primaryBlue, size: 24),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Gateway Pembayaran Midtrans Snap',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.primaryBlue),
+                            ),
+                            Text(
+                              'Buka Snap UI resmi untuk bayar via QRIS / VA langsung',
+                              style: TextStyle(fontSize: 10, color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary),
+                            ),
+                          ],
                         ),
-                        Text(
-                          'Buka Snap UI untuk membayar via QRIS/VA',
-                          style: TextStyle(fontSize: 10, color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryBlue,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      minimumSize: const Size(0, 34),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                    onPressed: () => _copyToClipboard(snapUrl, 'URL Pembayaran Midtrans Snap'),
-                    child: const Text('Salin URL Snap', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryBlue,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            minimumSize: const Size(0, 36),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          onPressed: () async {
+                            final uri = Uri.parse(snapUrl);
+                            if (await canLaunchUrl(uri)) {
+                              await launchUrl(uri, mode: LaunchMode.externalApplication);
+                            } else {
+                              _copyToClipboard(snapUrl, 'URL Pembayaran Midtrans Snap');
+                            }
+                          },
+                          icon: const Icon(Icons.open_in_browser_rounded, size: 16),
+                          label: const Text('Buka Snap Web Resmi 🚀', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.primaryBlue,
+                          side: const BorderSide(color: AppTheme.primaryBlue),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          minimumSize: const Size(0, 36),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        onPressed: () => _copyToClipboard(snapUrl, 'URL Pembayaran Midtrans Snap'),
+                        icon: const Icon(Icons.copy_rounded, size: 14),
+                        label: const Text('Salin Link', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -425,21 +521,38 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
                   ),
                   const SizedBox(height: 4),
                   const Text(
-                    '1. Buka browser: https://simulator.sandbox.midtrans.com/\n2. Pilih metode yang diinginkan (BCA / BNI / BRI / Mandiri / QRIS)\n3. Masukkan Nomor VA atau Order ID di atas\n4. Klik "Inquire" & "Pay", lalu klik tombol "Cek Status Pembayaran" di bawah.',
+                    '1. Klik "Buka Snap Web Resmi" di atas untuk memilih metode & nomor VA resmi.\n2. Buka simulator: https://simulator.sandbox.midtrans.com/\n3. Masukkan Nomor VA / Order ID di simulator lalu klik Pay.\n4. Klik "Cek Status Pembayaran (Midtrans)" di bawah untuk verifikasi.',
                     style: TextStyle(fontSize: 10, height: 1.4, color: Color(0xFF78350F)),
                   ),
                   const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton.icon(
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        minimumSize: const Size(0, 26),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton.icon(
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          minimumSize: const Size(0, 28),
+                        ),
+                        onPressed: () async {
+                          final uri = Uri.parse('https://simulator.sandbox.midtrans.com/');
+                          if (await canLaunchUrl(uri)) {
+                            await launchUrl(uri, mode: LaunchMode.externalApplication);
+                          }
+                        },
+                        icon: const Icon(Icons.open_in_new_rounded, size: 14, color: Color(0xFF92400E)),
+                        label: const Text('Buka Web Simulator 🌐', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF92400E))),
                       ),
-                      onPressed: () => _copyToClipboard('https://simulator.sandbox.midtrans.com/', 'URL Simulator Midtrans'),
-                      icon: const Icon(Icons.link_rounded, size: 14, color: Color(0xFF92400E)),
-                      label: const Text('Salin Link Simulator', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF92400E))),
-                    ),
+                      const SizedBox(width: 8),
+                      TextButton.icon(
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          minimumSize: const Size(0, 28),
+                        ),
+                        onPressed: () => _copyToClipboard('https://simulator.sandbox.midtrans.com/', 'URL Simulator Midtrans'),
+                        icon: const Icon(Icons.link_rounded, size: 14, color: Color(0xFF92400E)),
+                        label: const Text('Salin Link', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF92400E))),
+                      ),
+                    ],
                   ),
                 ],
               ),
