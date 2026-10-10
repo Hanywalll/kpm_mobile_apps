@@ -529,23 +529,28 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
                 children: [
                   const Row(
                     children: [
-                      Icon(Icons.science_rounded, size: 18, color: Color(0xFFB45309)),
+                      Icon(Icons.info_outline_rounded, size: 18, color: Color(0xFFB45309)),
                       SizedBox(width: 6),
                       Text(
-                        'Panduan Midtrans Simulator Sandbox',
+                        'Mekanisme Pembayaran Midtrans Snap',
                         style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF92400E)),
                       ),
                     ],
                   ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'PENTING: Nomor VA / Kode QR resmi diterbitkan di halaman web Midtrans Snap:',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF78350F)),
+                  ),
                   const SizedBox(height: 6),
                   const Text(
-                    'Untuk menguji transaksi ini di Midtrans Payment Simulator:',
-                    style: TextStyle(fontSize: 11, color: Color(0xFF78350F)),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    '1. Klik "Buka Snap Web Resmi" di atas untuk memilih metode & nomor VA resmi.\n2. Buka simulator: https://simulator.sandbox.midtrans.com/\n3. Masukkan Nomor VA / Order ID di simulator lalu klik Pay.\n4. Klik "Cek Status Pembayaran (Midtrans)" di bawah untuk verifikasi.',
-                    style: TextStyle(fontSize: 10, height: 1.4, color: Color(0xFF78350F)),
+                    '1. Klik tombol biru "Buka Snap Web Resmi 🚀" di atas.\n'
+                    '2. Di web Midtrans, pilih bank tujuan (BCA / Mandiri / BRI / Permata / QRIS).\n'
+                    '3. Salin Nomor VA resmi yang diterbitkan oleh Midtrans di web tersebut.\n'
+                    '4. Buka Simulator, tempelkan nomor VA tadi lalu klik "Inquire & Pay".\n'
+                    '5. Kembali ke aplikasi dan klik "Cek Status Pembayaran (Midtrans)".\n\n'
+                    '💡 Ingin cepat? Anda juga bisa langsung klik tombol "⚡ Simulasi Bayar Instan" di bawah tanpa perlu buka simulator!',
+                    style: TextStyle(fontSize: 11, height: 1.45, color: Color(0xFF78350F)),
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -581,6 +586,30 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
               ),
             ),
             const SizedBox(height: 18),
+
+            // 2. Channel Preview Section Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Pratinjau Metode Pembayaran',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text('Mockup UI', style: TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
 
             // 2. Channel Selector (QRIS / Virtual Account)
             Row(
