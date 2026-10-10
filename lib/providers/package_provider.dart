@@ -284,6 +284,18 @@ class PackageProvider with ChangeNotifier {
     );
   }
 
+  Future<String?> getRealMidtransVA({
+    required String orderId,
+    required double grossAmount,
+    required String bank,
+  }) {
+    return _packageService.getRealMidtransVA(
+      orderId: orderId,
+      grossAmount: grossAmount,
+      bank: bank,
+    );
+  }
+
   Future<bool> checkMidtransStatus(String orderId, String orderNumber) async {
     _isLoading = true;
     notifyListeners();

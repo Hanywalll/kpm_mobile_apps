@@ -116,6 +116,51 @@ class PackageService {
     }
   }
 
+  Future<String?> getRealMidtransVA({
+    required String orderId,
+    required double grossAmount,
+    required String bank,
+  }) async {
+    try {
+      final snapData = await createMidtransSnapTransaction(
+        orderId: orderId,
+        grossAmount: grossAmount,
+      );
+      final token = snapData?['token'] as String?;
+      if (token == null || token.isEmpty) return null;
+
+      final bankClean = bank.toLowerCase();
+      final payDio = Dio(BaseOptions(
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      ));
+
+      final response = await payDio.post(
+        'https://app.sandbox.midtrans.com/snap/v1/transactions/$token/pay',
+        data: {'payment_type': '${bankClean}_va'},
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      String vaNumber = '';
+      if (data['va_numbers'] is List && (data['va_numbers'] as List).isNotEmpty) {
+        vaNumber = (data['va_numbers'] as List).first['va_number']?.toString() ?? '';
+      }
+      if (vaNumber.isEmpty) {
+        vaNumber = data['${bankClean}_va_number']?.toString() ??
+                   data['permata_va_number']?.toString() ??
+                   data['va_number']?.toString() ??
+                   '';
+      }
+      return vaNumber.isNotEmpty ? vaNumber : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<Map<String, dynamic>?> checkMidtransStatus(String orderNumber) async {
     try {
       final key = midtransServerKey;

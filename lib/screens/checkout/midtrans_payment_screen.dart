@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatter.dart';
 import '../../models/order_model.dart';
@@ -29,6 +30,8 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
   String _selectedChannel = 'qris'; // 'qris' or 'va'
   String _selectedBank = 'BCA';
   bool _isChecking = false;
+  bool _isLoadingVa = false;
+  final Map<String, String> _realVaCache = {};
   late Timer _countdownTimer;
   int _secondsRemaining = 60 * 60; // 60 minutes expiry
 
@@ -49,7 +52,59 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
     _startPolling();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _ensureLiveSnapUrl();
+      _fetchRealVa(_selectedBank);
     });
+  }
+
+  Future<void> _fetchRealVa(String bank) async {
+    if (_realVaCache.containsKey(bank)) {
+      setState(() {
+        _vaNumber = _realVaCache[bank]!;
+      });
+      return;
+    }
+
+    setState(() => _isLoadingVa = true);
+    final packageProvider = Provider.of<PackageProvider>(context, listen: false);
+    final orderNum = widget.order?.orderNumber ?? 'ORD-KPM-${DateTime.now().millisecondsSinceEpoch}';
+    final amount = widget.order?.totalPrice ?? widget.package?.effectivePrice ?? 150000;
+
+    final realVa = await packageProvider.getRealMidtransVA(
+      orderId: orderNum,
+      grossAmount: amount,
+      bank: bank,
+    );
+
+    if (mounted) {
+      setState(() {
+        _isLoadingVa = false;
+        if (realVa != null && realVa.isNotEmpty) {
+          _realVaCache[bank] = realVa;
+          _vaNumber = realVa;
+        }
+      });
+    }
+  }
+
+  Future<void> _openSimulator(String bank) async {
+    final bankKey = bank.toLowerCase();
+    final url = Uri.parse('https://simulator.sandbox.midtrans.com/$bankKey/va/index');
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        await launchUrl(url);
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Simulator: https://simulator.sandbox.midtrans.com/$bankKey/va/index'),
+            backgroundColor: AppTheme.primaryBlue,
+          ),
+        );
+      }
+    }
   }
 
   void _ensureLiveSnapUrl() async {
@@ -343,7 +398,6 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
 
     final double amount = order?.totalPrice ?? pkg?.effectivePrice ?? 150000;
     final String orderNum = order?.orderNumber ?? 'ORD-KPM-${DateTime.now().millisecondsSinceEpoch}';
-    final String snapUrl = _liveSnapUrl ?? order?.paymentUrl ?? 'https://app.sandbox.midtrans.com/snap/v2/vtweb/demo';
 
     return Scaffold(
       backgroundColor: isDark ? AppTheme.darkBackgroundColor : AppTheme.backgroundColor,
@@ -679,15 +733,13 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
   // Virtual Account Section
   Widget _buildVASection(bool isDark) {
     final List<Map<String, String>> banks = [
-      {'code': 'BCA', 'name': 'BCA Virtual Account', 'prefix': '80777'},
-      {'code': 'Mandiri', 'name': 'Mandiri Bill Payment', 'prefix': '89022'},
-      {'code': 'BNI', 'name': 'BNI Virtual Account', 'prefix': '82770'},
-      {'code': 'BRI', 'name': 'BRI BRIVA', 'prefix': '78001'},
-      {'code': 'Permata', 'name': 'Permata Virtual Account', 'prefix': '84029'},
+      {'code': 'BCA', 'name': 'BCA Virtual Account'},
+      {'code': 'BNI', 'name': 'BNI Virtual Account'},
+      {'code': 'BRI', 'name': 'BRI BRIVA'},
+      {'code': 'Permata', 'name': 'Permata Virtual Account'},
     ];
 
-    final currentPrefix = banks.firstWhere((b) => b['code'] == _selectedBank, orElse: () => banks.first)['prefix']!;
-    final dynamicVa = '$currentPrefix${_vaNumber.substring(5)}';
+    final displayVa = _vaNumber;
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -695,7 +747,18 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Pilih Bank Virtual Account', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Pilih Bank Virtual Account', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              if (_isLoadingVa)
+                const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+            ],
+          ),
           const SizedBox(height: 12),
 
           // Bank Chips
@@ -720,7 +783,10 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
                           : (isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary),
                     ),
                     onSelected: (val) {
-                      if (val) setState(() => _selectedBank = b['code']!);
+                      if (val) {
+                        setState(() => _selectedBank = b['code']!);
+                        _fetchRealVa(b['code']!);
+                      }
                     },
                   ),
                 );
@@ -744,19 +810,28 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Nomor Virtual Account ($_selectedBank)',
+                        'Nomor Virtual Account ($_selectedBank Resmi Midtrans)',
                         style: TextStyle(fontSize: 10, color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary),
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        dynamicVa,
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1.2,
-                          color: AppTheme.primaryBlue,
+                      if (_isLoadingVa)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 4),
+                          child: Text(
+                            'Membuat nomor VA resmi...',
+                            style: TextStyle(fontSize: 13, fontStyle: FontStyle.italic, color: AppTheme.textSecondary),
+                          ),
+                        )
+                      else
+                        Text(
+                          displayVa,
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.2,
+                            color: AppTheme.primaryBlue,
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ),
@@ -768,24 +843,52 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
                     minimumSize: const Size(0, 36),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  onPressed: () => _copyToClipboard(dynamicVa, 'Nomor Virtual Account $_selectedBank'),
+                  onPressed: _isLoadingVa ? null : () => _copyToClipboard(displayVa, 'Nomor Virtual Account $_selectedBank'),
                   icon: const Icon(Icons.copy_rounded, size: 14),
                   label: const Text('Salin', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
           ),
+          const SizedBox(height: 12),
+
+          // Clean Midtrans Simulator Direct Link
+          InkWell(
+            onTap: () => _openSimulator(_selectedBank),
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryBlue.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppTheme.primaryBlue.withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.open_in_browser_rounded, size: 16, color: AppTheme.primaryBlue),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Buka Simulator Midtrans ($_selectedBank) 🌐',
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right_rounded, size: 16, color: AppTheme.primaryBlue),
+                ],
+              ),
+            ),
+          ),
           const SizedBox(height: 16),
 
           // Step-by-step instructions
           Text(
-            'Cara Pembayaran $_selectedBank:',
+            'Cara Uji Coba di Simulator Midtrans:',
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
           ),
           const SizedBox(height: 8),
-          _instructionStep('1', 'Buka aplikasi m-Banking atau ATM $_selectedBank.'),
-          _instructionStep('2', 'Pilih menu Transfer > Virtual Account.'),
-          _instructionStep('3', 'Masukkan nomor VA $dynamicVa lalu konfirmasi.'),
+          _instructionStep('1', 'Salin Nomor Virtual Account di atas.'),
+          _instructionStep('2', 'Buka Simulator Midtrans & pilih tab Inquiry/Payment.'),
+          _instructionStep('3', 'Tempel nomor VA, lakukan inquiry & payment. Status langsung berubah lunas!'),
         ],
       ),
     );
