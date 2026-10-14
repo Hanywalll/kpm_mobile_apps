@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/video_model.dart';
+import '../../services/realtime_sync_service.dart';
 import '../../services/video_service.dart';
 
 class VideoListScreen extends StatefulWidget {
@@ -35,10 +36,10 @@ class _VideoListScreenState extends State<VideoListScreen> {
     }
   }
 
-  List<VideoModel> get _filteredVideos {
-    if (_selectedSubject == 'Semua') return _videos;
+  List<VideoModel> _getFilteredVideos(List<VideoModel> source) {
+    if (_selectedSubject == 'Semua') return source;
     final q = _selectedSubject.toLowerCase();
-    return _videos.where((v) {
+    return source.where((v) {
       final t = v.title.toLowerCase();
       final d = v.description.toLowerCase();
       if (q.contains('matematika')) return t.contains('matematika') || t.contains('logaritma') || t.contains('eksponen') || t.contains('tps');
@@ -52,7 +53,9 @@ class _VideoListScreenState extends State<VideoListScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final videos = _filteredVideos;
+    final syncService = Provider.of<RealtimeSyncService>(context);
+    final allVideos = syncService.videos.isNotEmpty ? syncService.videos : _videos;
+    final videos = _getFilteredVideos(allVideos);
 
     return Scaffold(
       backgroundColor: isDark ? AppTheme.darkBackgroundColor : AppTheme.backgroundColor,
@@ -143,10 +146,10 @@ class _VideoListScreenState extends State<VideoListScreen> {
                         ),
                       )
                     : RefreshIndicator(
-                        onRefresh: () async => _loadVideos(),
+                        onRefresh: () async => await syncService.syncAll(silent: false),
                         child: ListView.builder(
                           padding: const EdgeInsets.all(16),
-                          physics: const ClampingScrollPhysics(),
+                          physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
                           itemCount: videos.length,
                           itemBuilder: (context, index) {
                             final vid = videos[index];

@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/live_class_model.dart';
 import '../../services/dashboard_service.dart';
+import '../../services/realtime_sync_service.dart';
 
 class LiveClassScreen extends StatefulWidget {
   const LiveClassScreen({super.key});
@@ -59,6 +60,9 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final syncService = Provider.of<RealtimeSyncService>(context);
+    final activeLiveClasses = syncService.liveClasses.isNotEmpty ? syncService.liveClasses : _liveClasses;
+    final showLoading = _isLoading && activeLiveClasses.isEmpty;
 
     return Scaffold(
       backgroundColor: isDark ? AppTheme.darkBackgroundColor : AppTheme.backgroundColor,
@@ -66,13 +70,13 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
         leading: AppTheme.backButton(context),
         title: const Text('Live Class & Interaktif'),
       ),
-      body: _isLoading
+      body: showLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
-              onRefresh: () async => _loadLiveClasses(),
+              onRefresh: () async => await syncService.syncAll(silent: false),
               child: ListView(
                 padding: const EdgeInsets.all(16),
-                physics: const ClampingScrollPhysics(),
+                physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
                 children: [
                   // Hero Info Banner
                   Container(
@@ -127,7 +131,7 @@ class _LiveClassScreenState extends State<LiveClassScreen> {
                   ),
                   const SizedBox(height: 10),
 
-                  ..._liveClasses.map((item) => _buildLiveClassCard(item, isDark)),
+                  ...activeLiveClasses.map((item) => _buildLiveClassCard(item, isDark)),
                 ],
               ),
             ),

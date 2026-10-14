@@ -12,6 +12,7 @@ import 'services/leaderboard_service.dart';
 import 'services/notification_service.dart';
 import 'services/package_service.dart';
 import 'services/practice_service.dart';
+import 'services/realtime_sync_service.dart';
 import 'services/support_service.dart';
 import 'services/tutor_service.dart';
 import 'services/video_service.dart';
@@ -97,6 +98,22 @@ class KPMApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(create: (_) => notificationService..getNotifications()),
         ChangeNotifierProvider(create: (_) => PracticeProvider(practiceService)),
+        ChangeNotifierProxyProvider<PackageProvider, RealtimeSyncService>(
+          create: (ctx) => RealtimeSyncService(
+            dashboardService: dashboardService,
+            videoService: videoService,
+            packageProvider: ctx.read<PackageProvider>(),
+          ),
+          update: (_, packageProv, syncService) {
+            syncService?.updatePackageProvider(packageProv);
+            return syncService ??
+                RealtimeSyncService(
+                  dashboardService: dashboardService,
+                  videoService: videoService,
+                  packageProvider: packageProv,
+                );
+          },
+        ),
         Provider.value(value: packageService),
         Provider.value(value: videoService),
         Provider.value(value: aiService),

@@ -137,7 +137,7 @@ class _PackageListScreenState extends State<PackageListScreen> {
                         onRefresh: () => packageProvider.fetchPackages(),
                         child: ListView.builder(
                           padding: const EdgeInsets.all(16),
-                          physics: const ClampingScrollPhysics(),
+                          physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
                           itemCount: packages.length,
                           itemBuilder: (context, index) {
                             final pkg = packages[index];

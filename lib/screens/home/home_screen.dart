@@ -15,6 +15,7 @@ import '../../providers/practice_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../services/dashboard_service.dart';
 import '../../services/notification_service.dart';
+import '../../services/realtime_sync_service.dart';
 import '../../services/video_service.dart';
 import '../../widgets/auth_guard_bottom_sheet.dart';
 import '../../widgets/custom_alert_dialog.dart';
@@ -236,7 +237,10 @@ class _HomeScreenState extends State<HomeScreen> {
     _autoSlideTimer?.cancel();
     _autoSlideTimer = Timer.periodic(const Duration(seconds: 8), (timer) {
       if (mounted && _bannerController.hasClients && _bannerController.page != null) {
-        final int nextPage = (_bannerController.page!.round() + 1) % _banners.length;
+        final syncService = Provider.of<RealtimeSyncService>(context, listen: false);
+        final banners = syncService.banners.isNotEmpty ? syncService.banners : _banners;
+        if (banners.isEmpty) return;
+        final int nextPage = (_bannerController.page!.round() + 1) % banners.length;
         _bannerController.animateToPage(
           nextPage,
           duration: const Duration(milliseconds: 500),
@@ -260,6 +264,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
     final packageProvider = Provider.of<PackageProvider>(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final syncService = Provider.of<RealtimeSyncService>(context);
+    final activeBanners = syncService.banners.isNotEmpty ? syncService.banners : _banners;
+    final activeVideos = syncService.videos.isNotEmpty ? syncService.videos : _recentVideos;
+
     final user = authProvider.user;
     final isLoggedIn = authProvider.isAuthenticated;
     final String initialChar = (isLoggedIn && user?.fullName != null && user!.fullName.isNotEmpty)
@@ -278,57 +286,64 @@ class _HomeScreenState extends State<HomeScreen> {
             // Prompt 1: Immersive Wave Header with Dynamic Theme Gradient
             _buildImmersiveHeader(context, initialChar, isLoggedIn, user?.fullName, user?.profilePhoto, packageProvider.cartCount, isDark, themeProvider),
 
-            // Scrollable Main Content
+            // Scrollable Main Content with Real-time Pull-to-Refresh
             Expanded(
-              child: SingleChildScrollView(
-                physics: const ClampingScrollPhysics(),
-                padding: const EdgeInsets.only(bottom: 40),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Admin Preview Indicator if admin
-                    if (authProvider.isAdmin) _buildAdminPreviewBanner(),
+              child: RefreshIndicator(
+                color: AppTheme.primaryBlue,
+                onRefresh: () async {
+                  await syncService.syncAll(silent: false);
+                  _loadUserProgress();
+                },
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
+                  padding: const EdgeInsets.only(bottom: 40),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Admin Preview Indicator if admin
+                      if (authProvider.isAdmin) _buildAdminPreviewBanner(),
 
-                    const SizedBox(height: 12),
+                      const SizedBox(height: 12),
 
-                    // Learning Wallet (Rebranded Gopay Card: Lanjut Belajar, Diskusi, Profil)
-                    _buildLearningWalletCard(context, isDark, isLoggedIn),
+                      // Learning Wallet (Rebranded Gopay Card: Lanjut Belajar, Diskusi, Profil)
+                      _buildLearningWalletCard(context, isDark, isLoggedIn),
 
-                    const SizedBox(height: 18),
+                      const SizedBox(height: 18),
 
-                    // Service Icons (4x2 Kisi KPM)
-                    _buildLearningServiceGrid(isDark),
+                      // Service Icons (4x2 Kisi KPM)
+                      _buildLearningServiceGrid(isDark),
 
-                    const SizedBox(height: 18),
+                      const SizedBox(height: 18),
 
-                    // Prompt 1: Replicate Banner "Daftar 1 Kursus, Dapatkan 1 Webinar Gratis!"
-                    _buildSpecialPromoBanner(context, isDark),
+                      // Prompt 1: Replicate Banner "Daftar 1 Kursus, Dapatkan 1 Webinar Gratis!"
+                      _buildSpecialPromoBanner(context, isDark),
 
-                    const SizedBox(height: 20),
+                      const SizedBox(height: 20),
 
-                    // Prompt 1: "Lanjut Belajar" Feed (Mimicking GoFood Restaurant Feed)
-                    _buildLanjutBelajarFeed(context, isDark),
+                      // Prompt 1: "Lanjut Belajar" Feed (Mimicking GoFood Restaurant Feed)
+                      _buildLanjutBelajarFeed(context, isDark),
 
-                    const SizedBox(height: 20),
+                      const SizedBox(height: 20),
 
-                    // Progres Belajar Statistik
-                    _buildProgresBelajarCard(context, isDark, isLoggedIn),
+                      // Progres Belajar Statistik
+                      _buildProgresBelajarCard(context, isDark, isLoggedIn),
 
-                    const SizedBox(height: 20),
+                      const SizedBox(height: 20),
 
-                    // Banner Promo Slider
-                    _buildBannerSlider(),
+                      // Banner Promo Slider (Real-time Synced from Admin)
+                      _buildBannerSlider(activeBanners),
 
-                    const SizedBox(height: 20),
+                      const SizedBox(height: 20),
 
-                    // Video Pembelajaran Terbaru
-                    _buildRecentVideosSection(isDark),
+                      // Video Pembelajaran Terbaru (Real-time Synced from Admin)
+                      _buildRecentVideosSection(isDark, activeVideos),
 
-                    const SizedBox(height: 20),
+                      const SizedBox(height: 20),
 
-                    // Paket Belajar Unggulan
-                    _buildFeaturedPackagesSection(packageProvider, isDark),
-                  ],
+                      // Paket Belajar Unggulan
+                      _buildFeaturedPackagesSection(packageProvider, isDark),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -795,6 +810,7 @@ class _HomeScreenState extends State<HomeScreen> {
           final item = _learningGridItems[index];
           return _buildGridServiceItem(item, isDark);
         },
+        
       ),
     );
   }
@@ -1354,17 +1370,18 @@ class _HomeScreenState extends State<HomeScreen> {
   // ==========================================
   // BANNER SLIDER
   // ==========================================
-  Widget _buildBannerSlider() {
+  Widget _buildBannerSlider(List<BannerModel> banners) {
+    if (banners.isEmpty) return const SizedBox.shrink();
     return Column(
       children: [
         SizedBox(
           height: 155,
           child: PageView.builder(
             controller: _bannerController,
-            itemCount: _banners.length,
+            itemCount: banners.length,
             onPageChanged: (idx) => _bannerPageNotifier.value = idx,
             itemBuilder: (context, index) {
-              final banner = _banners[index];
+              final banner = banners[index];
               final String imageUrl = banner.imageUrl;
 
               return GestureDetector(
@@ -1497,7 +1514,7 @@ class _HomeScreenState extends State<HomeScreen> {
             return Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
-                _banners.length,
+                banners.length,
                 (i) => AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
                   margin: const EdgeInsets.symmetric(horizontal: 3),
@@ -1519,7 +1536,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // ==========================================
   // RECENT VIDEOS SECTION
   // ==========================================
-  Widget _buildRecentVideosSection(bool isDark) {
+  Widget _buildRecentVideosSection(bool isDark, List<VideoModel> videos) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1547,7 +1564,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         const SizedBox(height: 10),
-        if (_isLoadingVideos && _recentVideos.isEmpty)
+        if (_isLoadingVideos && videos.isEmpty)
           const Padding(
             padding: EdgeInsets.all(20),
             child: Center(child: CircularProgressIndicator()),
@@ -1559,9 +1576,9 @@ class _HomeScreenState extends State<HomeScreen> {
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _recentVideos.length,
+              itemCount: videos.length,
               itemBuilder: (context, index) {
-                final video = _recentVideos[index];
+                final video = videos[index];
                 final String thumbUrl = video.safeThumbnailUrl;
 
                 return GestureDetector(

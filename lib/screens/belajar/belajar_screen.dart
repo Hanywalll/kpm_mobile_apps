@@ -6,6 +6,7 @@ import '../../models/module_model.dart';
 import '../../models/video_model.dart';
 import '../../providers/package_provider.dart';
 import '../../services/dashboard_service.dart';
+import '../../services/realtime_sync_service.dart';
 import '../../services/video_service.dart';
 
 class BelajarScreen extends StatefulWidget {
@@ -55,6 +56,8 @@ class _BelajarScreenState extends State<BelajarScreen> with SingleTickerProvider
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final syncService = Provider.of<RealtimeSyncService>(context);
+    final activeVideos = syncService.videos.isNotEmpty ? syncService.videos : _videos;
 
     return Scaffold(
       backgroundColor: isDark ? AppTheme.darkBackgroundColor : AppTheme.backgroundColor,
@@ -69,13 +72,20 @@ class _BelajarScreenState extends State<BelajarScreen> with SingleTickerProvider
           ),
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildKelasSayaSection(isDark),
-          _buildMateriSection(isDark),
-          _buildVideoSection(isDark),
-        ],
+      body: RefreshIndicator(
+        color: AppTheme.primaryBlue,
+        onRefresh: () async {
+          await syncService.syncAll(silent: false);
+          _loadModules();
+        },
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            _buildKelasSayaSection(isDark),
+            _buildMateriSection(isDark),
+            _buildVideoSection(isDark, activeVideos),
+          ],
+        ),
       ),
     );
   }
@@ -311,13 +321,13 @@ class _BelajarScreenState extends State<BelajarScreen> with SingleTickerProvider
   }
 
   // Unified Video Pembelajaran Tab (Real VideoModel from VideoService)
-  Widget _buildVideoSection(bool isDark) {
+  Widget _buildVideoSection(bool isDark, List<VideoModel> videos) {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      physics: const ClampingScrollPhysics(),
-      itemCount: _videos.length,
+      physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
+      itemCount: videos.length,
       itemBuilder: (context, index) {
-        final vid = _videos[index];
+        final vid = videos[index];
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.all(12),

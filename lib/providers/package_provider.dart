@@ -159,10 +159,13 @@ class PackageProvider with ChangeNotifier {
     String? kelas,
     String? jenjang,
     String? search,
+    bool silent = false,
   }) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
+    if (!silent) {
+      _isLoading = true;
+      _errorMessage = null;
+      notifyListeners();
+    }
 
     try {
       final activeJenjang = jenjang ?? (_selectedJenjang != 'Semua' ? _selectedJenjang : null);
@@ -181,7 +184,9 @@ class PackageProvider with ChangeNotifier {
         }
       }
     } catch (e) {
-      _errorMessage = e.toString();
+      if (!silent) {
+        _errorMessage = e.toString();
+      }
     } finally {
       _isLoading = false;
       notifyListeners();
