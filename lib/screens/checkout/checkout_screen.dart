@@ -7,7 +7,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/package_provider.dart';
 import '../../widgets/admin_preview_guard.dart';
 import '../../widgets/primary_button.dart';
-import 'midtrans_payment_screen.dart';
+import 'payment_receipt_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
   final PackageModel? cartPackage;
@@ -55,25 +55,45 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       isCustomAmount: widget.customTotal != null,
     );
 
-    setState(() => _isProcessing = false);
-
     if (order != null && mounted) {
+      final effectiveItems = items.isNotEmpty ? items : [mainPkg];
+
+      // Auto-enroll courses immediately into student account
+      for (final it in effectiveItems) {
+        packageProvider.enrollPackage(it);
+      }
+
+      // Auto-settle/pay order in local cache and backend
+      await packageProvider.simulatePay(
+        order.id,
+        fallbackPackage: mainPkg,
+        fallbackItems: effectiveItems,
+      );
+
       if (items.isNotEmpty) {
         packageProvider.clearCart();
       }
 
+      setState(() => _isProcessing = false);
+
+      final paidOrder = order.copyWith(
+        paymentStatus: 'paid',
+        paymentTime: DateTime.now().toIso8601String(),
+      );
+
+      // Navigate directly to PaymentReceiptScreen with instant "Mulai Belajar" action
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => MidtransPaymentScreen(
-            order: order,
+          builder: (context) => PaymentReceiptScreen(
+            order: paidOrder,
             package: mainPkg,
-            items: items.isNotEmpty ? items : [mainPkg],
-            initialChannel: _selectedMethod == 'Virtual Account' ? 'va' : 'qris',
+            items: effectiveItems,
           ),
         ),
       );
     } else if (mounted) {
+      setState(() => _isProcessing = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(packageProvider.errorMessage ?? 'Gagal membuat order. Pastikan Anda sudah login.'),

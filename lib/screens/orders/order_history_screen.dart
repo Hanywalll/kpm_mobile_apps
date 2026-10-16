@@ -151,14 +151,10 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     Color statusColor = Colors.grey;
     String statusText = order.statusFormatted;
 
-    if (order.isSuccess) {
+    if (order.isSuccess || order.isPending) {
       statusBg = const Color(0xFFD1FAE5);
       statusColor = const Color(0xFF059669);
       statusText = 'BERHASIL';
-    } else if (order.isPending) {
-      statusBg = const Color(0xFFFEF3C7);
-      statusColor = const Color(0xFFD97706);
-      statusText = 'MENUNGGU';
     } else {
       statusBg = const Color(0xFFFEE2E2);
       statusColor = const Color(0xFFDC2626);
