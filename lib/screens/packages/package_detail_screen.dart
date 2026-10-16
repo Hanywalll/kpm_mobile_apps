@@ -463,20 +463,26 @@ class PackageDetailScreen extends StatelessWidget {
                           if (!AdminPreviewGuard.checkActionAllowed(context, actionName: 'menambah paket ke keranjang')) {
                             return;
                           }
-                          final added = packageProvider.toggleCart(pkg);
-                          if (added) {
-                            AppModal.showCartSuccess(
-                              context,
-                              package: pkg,
-                              onGoToCart: () => Navigator.pushNamed(context, '/cart'),
-                            );
-                          } else {
-                            AppModal.showInfo(
-                              context,
-                              title: 'Dihapus dari Keranjang',
-                              message: '${pkg.title} telah dihapus dari keranjang belajar Anda.',
-                            );
-                          }
+                          AuthGuard.check(
+                            context,
+                            featureName: 'Menambah ${pkg.title} ke Keranjang',
+                            onAuthenticated: () {
+                              final added = packageProvider.toggleCart(pkg);
+                              if (added) {
+                                AppModal.showCartSuccess(
+                                  context,
+                                  package: pkg,
+                                  onGoToCart: () => Navigator.pushNamed(context, '/cart'),
+                                );
+                              } else {
+                                AppModal.showInfo(
+                                  context,
+                                  title: 'Dihapus dari Keranjang',
+                                  message: '${pkg.title} telah dihapus dari keranjang belajar Anda.',
+                                );
+                              }
+                            },
+                          );
                         },
                         icon: Icon(
                           isAlreadyInCart ? Icons.shopping_cart_rounded : Icons.add_shopping_cart_rounded,

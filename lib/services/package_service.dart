@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/api/api_client.dart';
 import '../core/api/api_endpoints.dart';
+import '../core/storage/secure_storage.dart';
 import '../models/package_model.dart';
 import '../models/order_model.dart';
 
@@ -239,6 +240,12 @@ class PackageService {
     double? totalPrice,
     bool isCustomAmount = false,
   }) async {
+    // Cek apakah pengguna sudah memiliki sesi login aktif
+    final token = await SecureStorage.getToken();
+    if (token == null || token.isEmpty) {
+      throw 'Harap login ke akun siswa Anda terlebih dahulu untuk membeli paket.';
+    }
+
     final orderNum = 'ORD-KPM-${DateTime.now().millisecondsSinceEpoch}';
     final amount = totalPrice ?? 150000;
 
@@ -275,7 +282,7 @@ class PackageService {
       final pUrl = model.paymentUrl;
       finalOrder = OrderModel(
         id: model.id.isNotEmpty ? model.id : 'ord_${DateTime.now().millisecondsSinceEpoch}',
-        userId: model.userId.isNotEmpty ? model.userId : 'kpm_student_1',
+        userId: model.userId,
         packageId: model.packageId ?? packageId,
         package: model.package ?? matchedPackage,
         orderNumber: model.orderNumber.isNotEmpty ? model.orderNumber : orderNum,
@@ -285,19 +292,17 @@ class PackageService {
         paymentReference: model.paymentReference ?? snapToken,
         createdAt: model.createdAt ?? DateTime.now().toIso8601String(),
       );
-    } catch (_) {
-      finalOrder = OrderModel(
-        id: 'ord_${DateTime.now().millisecondsSinceEpoch}',
-        userId: 'kpm_student_1',
-        packageId: packageId,
-        package: matchedPackage,
-        orderNumber: orderNum,
-        totalPrice: amount,
-        paymentStatus: 'pending',
-        paymentUrl: snapUrl,
-        paymentReference: snapToken,
-        createdAt: DateTime.now().toIso8601String(),
-      );
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response?.statusCode == 401) {
+          throw 'Sesi login telah berakhir. Silakan masuk kembali ke akun Anda.';
+        }
+        final msg = e.response?.data?['message']?.toString();
+        if (msg != null && msg.isNotEmpty) {
+          throw msg;
+        }
+      }
+      rethrow;
     }
 
     // Save to local cache so it appears immediately in history

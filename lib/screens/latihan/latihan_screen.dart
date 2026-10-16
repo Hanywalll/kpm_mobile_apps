@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../models/package_model.dart';
 import '../../providers/package_provider.dart';
 import '../../widgets/auth_guard_bottom_sheet.dart';
 
@@ -56,35 +57,95 @@ class _LatihanScreenState extends State<LatihanScreen> with SingleTickerProvider
 
   Widget _buildTryoutSection(bool isDark) {
     final packageProvider = Provider.of<PackageProvider>(context);
-    final packages = packageProvider.packages;
+    final enrolled = packageProvider.enrolledPackages;
 
-    final List<Map<String, dynamic>> defaultTryouts = [
-      {
-        'title': 'Simulasi Ujian Matematika Nalaria Terpadu',
-        'sub': '60 Menit • 20 Soal • Pembahasan Komprehensif',
-        'tag': 'UJIAN UTAMA',
-        'pkgId': packages.isNotEmpty ? packages.first.id : 'pkg_kpm_1',
-      },
-      {
-        'title': 'Mini Tryout Logika & Sains MIPA',
-        'sub': '30 Menit • 10 Soal • Evaluasi Cepat',
-        'tag': 'SIMULASI CEPAT',
-        'pkgId': packages.length > 1 ? packages[1].id : 'pkg_kpm_2',
-      },
-      {
-        'title': 'Evaluasi Hasil & Rapor Skor Ujian',
-        'sub': 'Lihat detail jawaban, akurasi, dan perbaikan',
-        'tag': 'RAPOR SKOR',
-        'route': '/result',
-      },
-    ];
+    if (enrolled.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.assignment_late_outlined, size: 48, color: AppTheme.primaryBlue),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Tryout CBT Terikat Paket Belajar',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Simulasi Ujian Online (CBT) dan tryout terstandar disesuaikan dengan kurikulum paket belajar yang Anda miliki. Aktifkan paket belajar untuk mulai mengerjakan tryout!',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryBlue,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                ),
+                onPressed: () => Navigator.pushNamed(context, '/package_list'),
+                icon: const Icon(Icons.school_rounded, size: 16),
+                label: const Text('Pilih Paket Belajar', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              ),
+              const SizedBox(height: 12),
+              TextButton.icon(
+                onPressed: () => Navigator.pushNamed(context, '/result'),
+                icon: const Icon(Icons.analytics_outlined, size: 16, color: AppTheme.kpmGold),
+                label: const Text('Lihat Riwayat Skor & Evaluasi Terakhir', style: TextStyle(fontSize: 12, color: AppTheme.kpmGold, fontWeight: FontWeight.w700)),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final List<Map<String, dynamic>> tryouts = [];
+
+    // Dynamically populate tryouts from enrolled packages
+    for (final pkg in enrolled) {
+      final cards = pkg.parsedCards;
+      for (final card in cards) {
+        tryouts.add({
+          'title': 'Tryout CBT: ${pkg.title}',
+          'sub': '${card.title} • ${card.durationMinutes} Menit • ${card.totalQuestions} Soal • ${pkg.jenjang} ${pkg.kelas}',
+          'tag': 'CBT AKTIF',
+          'pkgId': pkg.id,
+        });
+      }
+    }
+
+    // Append report card entry
+    tryouts.add({
+      'title': 'Evaluasi Hasil & Rapor Skor Ujian',
+      'sub': 'Lihat detail jawaban, akurasi pengerjaan, dan analisis kemampuan',
+      'tag': 'RAPOR SKOR',
+      'route': '/result',
+    });
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       physics: const ClampingScrollPhysics(),
-      itemCount: defaultTryouts.length,
+      itemCount: tryouts.length,
       itemBuilder: (context, index) {
-        final item = defaultTryouts[index];
+        final item = tryouts[index];
         final bool isResult = item['route'] != null;
 
         return Container(
@@ -238,11 +299,66 @@ class _LatihanScreenState extends State<LatihanScreen> with SingleTickerProvider
   }
 
   Widget _buildBankSoalSection(bool isDark) {
-    final List<Map<String, dynamic>> bankSoal = [
-      {'title': 'Bank Soal Matematika Nalaria SD/SMP', 'sub': '150+ Soal & Pembahasan Lengkap'},
-      {'title': 'Bank Soal Sains & Olimpiade MIPA', 'sub': '120+ Soal Terstandar KPM'},
-      {'title': 'Bank Soal Asesmen Kompetensi Nasional', 'sub': '100+ Soal Latihan Mandiri'},
-    ];
+    final packageProvider = Provider.of<PackageProvider>(context);
+    final enrolled = packageProvider.enrolledPackages;
+
+    if (enrolled.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryPurple.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.lock_outline_rounded, size: 48, color: AppTheme.primaryPurple),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Bank Soal Terikat Paket Belajar',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Bank soal dan pembahasan nalar lengkap disesuaikan secara khusus dengan kurikulum paket belajar yang Anda miliki. Aktifkan paket belajar untuk membuka bank soal.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryPurple,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                ),
+                onPressed: () => Navigator.pushNamed(context, '/package_list'),
+                icon: const Icon(Icons.school_rounded, size: 16),
+                label: const Text('Pilih Paket Belajar', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final List<Map<String, dynamic>> bankSoal = enrolled.map((pkg) => {
+      'title': 'Bank Soal: ${pkg.title}',
+      'sub': 'Koleksi Soal Terstruktur ${pkg.jenjang} • Kelas ${pkg.kelas} • Pembahasan Lengkap',
+      'pkg': pkg,
+    }).toList();
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
@@ -250,6 +366,7 @@ class _LatihanScreenState extends State<LatihanScreen> with SingleTickerProvider
       itemCount: bankSoal.length,
       itemBuilder: (context, index) {
         final bs = bankSoal[index];
+        final pkg = bs['pkg'] as PackageModel;
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -297,7 +414,7 @@ class _LatihanScreenState extends State<LatihanScreen> with SingleTickerProvider
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
-                onPressed: () => Navigator.pushNamed(context, '/package_list'),
+                onPressed: () => Navigator.pushNamed(context, '/video_list', arguments: pkg),
                 child: const Text('Buka', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
               ),
             ],

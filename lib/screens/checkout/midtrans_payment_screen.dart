@@ -435,7 +435,19 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
               child: TextButton(
                 onPressed: () {
                   Navigator.pop(ctx);
-                  Navigator.pushNamedAndRemoveUntil(context, '/belajar', (route) => false);
+                  final targetPkg = (widget.items != null && widget.items!.isNotEmpty)
+                      ? widget.items!.first
+                      : (widget.package ?? widget.order?.package);
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const MainNavigationScreen(initialIndex: 1),
+                    ),
+                    (route) => false,
+                  );
+                  if (targetPkg != null) {
+                    Navigator.pushNamed(context, '/video_list', arguments: targetPkg);
+                  }
                 },
                 child: Text(
                   'Langsung Belajar',

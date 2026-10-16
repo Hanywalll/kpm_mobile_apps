@@ -31,6 +31,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   void _handlePayment(PackageModel mainPkg, double totalAmount, List<PackageModel> items) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (!authProvider.isAuthenticated || authProvider.user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Silakan login terlebih dahulu untuk melakukan transaksi.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      Navigator.pushNamed(context, '/login');
+      return;
+    }
     if (authProvider.isAdmin) {
       AdminPreviewGuard.checkActionAllowed(context, actionName: 'melakukan checkout pembayaran paket');
       return;
@@ -66,7 +76,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(packageProvider.errorMessage ?? 'Gagal membuat order.'),
+          content: Text(packageProvider.errorMessage ?? 'Gagal membuat order. Pastikan Anda sudah login.'),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -115,6 +125,68 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     final authProvider = Provider.of<AuthProvider>(context);
     final isAdmin = authProvider.isAdmin;
+    final isAuthenticated = authProvider.isAuthenticated && authProvider.user != null;
+
+    if (!isAuthenticated) {
+      return Scaffold(
+        backgroundColor: isDark ? AppTheme.darkBackgroundColor : AppTheme.backgroundColor,
+        appBar: AppBar(
+          leading: AppTheme.backButton(context),
+          title: const Text('Pembayaran Paket'),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 76,
+                  height: 76,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryBlue.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.lock_person_rounded, size: 40, color: AppTheme.primaryBlue),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Silakan Masuk Terlebih Dahulu 🔒',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Fitur transaksi dan aktivasi paket belajar hanya dapat dilakukan oleh pengguna yang telah login agar hak akses tersimpan ke database.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryBlue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 13),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () => Navigator.pushNamed(context, '/login'),
+                  icon: const Icon(Icons.login_rounded, size: 18),
+                  label: const Text('Masuk / Daftar Akun Sekarang', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: isDark ? AppTheme.darkBackgroundColor : AppTheme.backgroundColor,

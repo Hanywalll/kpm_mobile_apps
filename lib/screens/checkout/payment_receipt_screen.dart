@@ -76,7 +76,8 @@ class PaymentReceiptScreen extends StatelessWidget {
       (route) => false,
     );
     if (targetPkg != null) {
-      Navigator.pushNamed(context, '/package_detail', arguments: targetPkg);
+      // Langsung menuju ke materi pembelajaran (video & modul paket) tanpa melewati detail paket
+      Navigator.pushNamed(context, '/video_list', arguments: targetPkg);
     }
   }
 

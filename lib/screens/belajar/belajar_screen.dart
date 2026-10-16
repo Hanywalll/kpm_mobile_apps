@@ -235,8 +235,7 @@ class _BelajarScreenState extends State<BelajarScreen> with SingleTickerProvider
                   ),
                   GestureDetector(
                     onTap: () {
-                      packageProvider.fetchPackageDetail(pkg.id);
-                      Navigator.pushNamed(context, '/package_detail', arguments: pkg);
+                      Navigator.pushNamed(context, '/video_list', arguments: pkg);
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -263,8 +262,63 @@ class _BelajarScreenState extends State<BelajarScreen> with SingleTickerProvider
     );
   }
 
-  // Materi & Modul (Clean & Compact)
+  // Materi & Modul (Clean & Compact, Scoped to Enrolled Packages)
   Widget _buildMateriSection(bool isDark) {
+    final packageProvider = Provider.of<PackageProvider>(context);
+    final enrolled = packageProvider.enrolledPackages;
+
+    if (enrolled.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.menu_book_outlined, size: 48, color: AppTheme.primaryBlue),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Modul Terikat Pada Paket Belajar',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Materi PDF, silabus, dan modul latihan terikat secara khusus dengan paket belajar yang Anda miliki. Aktifkan paket belajar untuk mengakses materi!',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryBlue,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                ),
+                onPressed: () => Navigator.pushNamed(context, '/package_list'),
+                icon: const Icon(Icons.school_rounded, size: 16),
+                label: const Text('Pilih Paket Belajar', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       physics: const ClampingScrollPhysics(),
@@ -320,14 +374,72 @@ class _BelajarScreenState extends State<BelajarScreen> with SingleTickerProvider
     );
   }
 
-  // Unified Video Pembelajaran Tab (Real VideoModel from VideoService)
+  // Unified Video Pembelajaran Tab (Strictly Scoped to Enrolled Packages)
   Widget _buildVideoSection(bool isDark, List<VideoModel> videos) {
+    final packageProvider = Provider.of<PackageProvider>(context);
+    final enrolled = packageProvider.enrolledPackages;
+
+    if (enrolled.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.videocam_off_outlined, size: 48, color: AppTheme.primaryBlue),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Video Belajar Terikat Paket',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Video pembahasan dan rekaman tutor eksklusif hanya dapat diakses melalui paket belajar yang aktif. Pilih paket belajar Anda sekarang!',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryBlue,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                ),
+                onPressed: () => Navigator.pushNamed(context, '/package_list'),
+                icon: const Icon(Icons.ondemand_video_rounded, size: 16),
+                label: const Text('Beli Paket Belajar', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Filter videos by the user's enrolled packages
+    final scopedVideos = VideoService.getVideosForPackage(enrolled.first, videos);
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
-      itemCount: videos.length,
+      itemCount: scopedVideos.length,
       itemBuilder: (context, index) {
-        final vid = videos[index];
+        final vid = scopedVideos[index];
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.all(12),
