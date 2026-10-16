@@ -243,6 +243,115 @@ class PackageDetailScreen extends StatelessWidget {
                       height: 1.4,
                     ),
                   ),
+                  const SizedBox(height: 18),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Silabus & Materi Paket',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                        ),
+                      ),
+                      if (packageProvider.isEnrolled(pkg.id))
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.check_circle_rounded, size: 11, color: Color(0xFF10B981)),
+                              SizedBox(width: 4),
+                              Text(
+                                'AKSES TERBUKA',
+                                style: TextStyle(
+                                  color: Color(0xFF10B981),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Curriculum Card 1: Video Pembelajaran
+                  _curriculumItem(
+                    context,
+                    icon: Icons.play_circle_fill_rounded,
+                    iconColor: AppTheme.primaryBlue,
+                    title: 'Video Pembelajaran Konsep & Trik',
+                    subtitle: 'Akses seluruh rekaman materi terstruktur bersama Master Tutor',
+                    actionLabel: packageProvider.isEnrolled(pkg.id) ? 'Tonton' : 'Terkunci',
+                    isLocked: !packageProvider.isEnrolled(pkg.id),
+                    isDark: isDark,
+                    onTap: () {
+                      if (packageProvider.isEnrolled(pkg.id)) {
+                        Navigator.pushNamed(context, '/video_list');
+                      } else {
+                        AppModal.showInfo(
+                          context,
+                          title: 'Paket Belum Aktif',
+                          message: 'Silakan beli paket ini terlebih dahulu untuk membuka akses seluruh video pembelajaran.',
+                        );
+                      }
+                    },
+                  ),
+
+                  // Curriculum Card 2: Simulasi Ujian & Tryout
+                  _curriculumItem(
+                    context,
+                    icon: Icons.assignment_rounded,
+                    iconColor: const Color(0xFF8B5CF6),
+                    title: 'Simulasi Ujian Online & CBT',
+                    subtitle: '${pkg.totalQuestions} Soal latihan terstandar dengan analisis skor mendalam',
+                    actionLabel: packageProvider.isEnrolled(pkg.id) ? 'Mulai' : 'Terkunci',
+                    isLocked: !packageProvider.isEnrolled(pkg.id),
+                    isDark: isDark,
+                    onTap: () {
+                      if (packageProvider.isEnrolled(pkg.id)) {
+                        Navigator.pushNamed(context, '/pretest', arguments: pkg.id);
+                      } else {
+                        AppModal.showInfo(
+                          context,
+                          title: 'Paket Belum Aktif',
+                          message: 'Silakan beli paket ini terlebih dahulu untuk membuka modul simulasi tryout.',
+                        );
+                      }
+                    },
+                  ),
+
+                  // Curriculum Card 3: Modul & Bank Soal
+                  _curriculumItem(
+                    context,
+                    icon: Icons.menu_book_rounded,
+                    iconColor: const Color(0xFFF59E0B),
+                    title: 'Rangkuman Materi & Modul Belajar',
+                    subtitle: '${pkg.totalCards > 0 ? pkg.totalCards : 1} Modul pengayaan dan bank soal latihan mandiri',
+                    actionLabel: packageProvider.isEnrolled(pkg.id) ? 'Buka' : 'Terkunci',
+                    isLocked: !packageProvider.isEnrolled(pkg.id),
+                    isDark: isDark,
+                    onTap: () {
+                      if (packageProvider.isEnrolled(pkg.id)) {
+                        Navigator.pushNamed(context, '/latihan');
+                      } else {
+                        AppModal.showInfo(
+                          context,
+                          title: 'Paket Belum Aktif',
+                          message: 'Silakan beli paket ini terlebih dahulu untuk mengakses bank soal dan modul latihan.',
+                        );
+                      }
+                    },
+                  ),
+
                   const SizedBox(height: 16),
                 ],
               ),
@@ -324,10 +433,10 @@ class PackageDetailScreen extends StatelessWidget {
                         elevation: 2,
                       ),
                       onPressed: () {
-                        Navigator.pushNamedAndRemoveUntil(
+                        // Langsung masuk ke materi video pembelajaran tanpa looping kembali ke menu belajar
+                        Navigator.pushNamed(
                           context,
-                          '/belajar',
-                          (route) => false,
+                          '/video_list',
                         );
                       },
                       icon: const Icon(Icons.play_circle_fill_rounded, size: 18),
@@ -463,6 +572,86 @@ class PackageDetailScreen extends StatelessWidget {
                 Text(
                   subtitle,
                   style: TextStyle(fontSize: 10, color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _curriculumItem(
+    BuildContext context, {
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required String actionLabel,
+    required bool isLocked,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: AppTheme.bentoBoxDecoration(context: context),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: iconColor, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isLocked ? (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)) : iconColor,
+              foregroundColor: isLocked ? (isDark ? Colors.white54 : const Color(0xFF64748B)) : Colors.white,
+              minimumSize: const Size(60, 32),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: onTap,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isLocked)
+                  const Padding(
+                    padding: EdgeInsets.only(right: 3),
+                    child: Icon(Icons.lock_rounded, size: 11),
+                  ),
+                Text(
+                  actionLabel,
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
