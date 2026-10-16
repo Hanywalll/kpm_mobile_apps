@@ -27,10 +27,24 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
     {'id': 'user', 'label': 'Siswa Baru'},
   ];
 
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
   @override
   void initState() {
     super.initState();
+    _searchController.addListener(() {
+      if (mounted) {
+        setState(() => _searchQuery = _searchController.text.trim().toLowerCase());
+      }
+    });
     _loadNotifications();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadNotifications() async {
@@ -67,9 +81,15 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
   }
 
   List<AdminNotificationItem> get _filteredNotifications {
-    if (_selectedFilter == 'all') return _notifications;
-    if (_selectedFilter == 'unread') return _notifications.where((n) => !n.isRead).toList();
-    return _notifications.where((n) => n.type == _selectedFilter).toList();
+    return _notifications.where((n) {
+      final matchesFilter = _selectedFilter == 'all'
+          ? true
+          : (_selectedFilter == 'unread' ? !n.isRead : n.type == _selectedFilter);
+      final matchesSearch = _searchQuery.isEmpty ||
+          n.title.toLowerCase().contains(_searchQuery) ||
+          n.message.toLowerCase().contains(_searchQuery);
+      return matchesFilter && matchesSearch;
+    }).toList();
   }
 
   int get _unreadCount => _notifications.where((n) => !n.isRead).length;
@@ -126,44 +146,69 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                // Horizontal filter chips
+                // Search on Left, Filter Dropdown on Right
                 Container(
                   color: isDark ? AppTheme.darkCardColor : Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    physics: const BouncingScrollPhysics(),
-                    child: Row(
-                      children: _filterTabs.map((tab) {
-                        final isSelected = _selectedFilter == tab['id'];
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 6),
-                          child: ChoiceChip(
-                            label: Text(tab['label']!),
-                            selected: isSelected,
-                            onSelected: (val) {
-                              if (val) setState(() => _selectedFilter = tab['id']!);
-                            },
-                            selectedColor: AppTheme.primaryBlue,
-                            backgroundColor: isDark ? AppTheme.darkSurfaceColor : const Color(0xFFF1F5F9),
-                            labelStyle: TextStyle(
-                              color: isSelected
-                                  ? Colors.white
-                                  : (isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary),
-                              fontSize: 11,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                            ),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                            side: BorderSide(
-                              color: isSelected
-                                  ? AppTheme.primaryBlue
-                                  : (isDark ? AppTheme.darkBorderColor : AppTheme.borderColor),
-                            ),
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+                  child: Row(
+                    children: [
+                      // Sisi Kiri: Search TextField
+                      Expanded(
+                        child: TextField(
+                          controller: _searchController,
+                          style: TextStyle(fontSize: 12.5, color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary),
+                          decoration: InputDecoration(
+                            hintText: 'Cari notifikasi atau aktivitas...',
+                            hintStyle: TextStyle(fontSize: 11.5, color: isDark ? AppTheme.darkTextMuted : AppTheme.textMuted),
+                            prefixIcon: const Icon(Icons.search_rounded, size: 17),
+                            suffixIcon: _searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.close_rounded, size: 15),
+                                    onPressed: () => _searchController.clear(),
+                                  )
+                                : null,
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            filled: true,
+                            fillColor: isDark ? AppTheme.darkSurfaceColor : const Color(0xFFF1F5F9),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
                           ),
-                        );
-                      }).toList(),
-                    ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+
+                      // Sisi Kanan: Dropdown Filter
+                      Container(
+                        height: 38,
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        decoration: BoxDecoration(
+                          color: isDark ? AppTheme.darkSurfaceColor : const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: isDark ? AppTheme.darkBorderColor : AppTheme.borderColor),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedFilter,
+                            icon: const Icon(Icons.filter_list_rounded, size: 16),
+                            dropdownColor: isDark ? AppTheme.darkCardColor : Colors.white,
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                            ),
+                            onChanged: (val) {
+                              if (val != null) setState(() => _selectedFilter = val);
+                            },
+                            items: _filterTabs.map((tab) {
+                              return DropdownMenuItem<String>(
+                                value: tab['id'],
+                                child: Text(tab['label']!),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const Divider(height: 1, thickness: 1),
