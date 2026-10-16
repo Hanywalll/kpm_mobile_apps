@@ -23,6 +23,12 @@ import 'providers/practice_provider.dart';
 import 'providers/theme_provider.dart';
 
 import 'screens/admin/admin_dashboard_screen.dart';
+import 'screens/admin/admin_notifications_screen.dart';
+import 'screens/admin/admin_users_screen.dart';
+import 'screens/admin/admin_tryouts_screen.dart';
+import 'screens/admin/admin_support_screen.dart';
+import 'screens/admin/admin_testimonials_screen.dart';
+import 'screens/admin/admin_enroll_keys_screen.dart';
 import 'screens/ai_tutor/chat_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
@@ -162,6 +168,12 @@ class KPMApp extends StatelessWidget {
               '/all_features': (context) => const AllFeaturesScreen(),
               '/leaderboard': (context) => const LeaderboardScreen(),
               '/admin_dashboard': (context) => const AdminDashboardScreen(),
+              '/admin_notifications': (context) => const AdminNotificationsScreen(),
+              '/admin_users': (context) => const AdminUsersScreen(),
+              '/admin_tryouts': (context) => const AdminTryoutsScreen(),
+              '/admin_support': (context) => const AdminSupportScreen(),
+              '/admin_testimonials': (context) => const AdminTestimonialsScreen(),
+              '/admin_enroll_keys': (context) => const AdminEnrollKeysScreen(),
               '/search': (context) => const SearchScreen(),
               '/profile': (context) => const ProfileScreen(),
               '/notification': (context) => const NotificationScreen(),

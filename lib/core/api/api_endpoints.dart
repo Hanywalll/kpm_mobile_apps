@@ -120,4 +120,8 @@ class ApiEndpoints {
   static const String adminVouchers = '/admin/vouchers';
   static const String adminTutors = '/admin/tutors';
   static const String adminTestimonials = '/admin/testimonials';
+  static const String adminNotifications = '/admin/notifications';
+  static const String adminSupport = '/admin/support';
+  static const String adminTryouts = '/admin/tryouts';
+  static const String adminEnrollKeys = '/admin/enroll-keys';
 }

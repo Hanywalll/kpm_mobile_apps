@@ -16,6 +16,7 @@ import '../../providers/theme_provider.dart';
 import '../../services/admin_service.dart';
 import '../../services/dashboard_service.dart';
 import '../../services/video_service.dart';
+import 'admin_notifications_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -28,6 +29,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   int _currentNavIndex = 0;
   AdminDashboardStats _stats = AdminDashboardStats();
   bool _isLoading = true;
+  int _unreadNotifsCount = 3;
 
   // Selected filter inside CMS tab
   String _selectedCMSFilter = 'all';
@@ -227,6 +229,37 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         ],
       ),
       actions: [
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.notifications_outlined, size: 21),
+              tooltip: 'Notifikasi Aktivitas',
+              onPressed: () async {
+                await Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminNotificationsScreen()));
+                if (mounted) setState(() => _unreadNotifsCount = 0);
+              },
+            ),
+            if (_unreadNotifsCount > 0)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFEF4444),
+                    shape: BoxShape.circle,
+                  ),
+                  constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+                  child: Text(
+                    '$_unreadNotifsCount',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+          ],
+        ),
         IconButton(
           icon: const Icon(Icons.remove_red_eye_outlined, size: 20),
           tooltip: 'Mode Tinjau Siswa',
@@ -391,9 +424,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 child: _buildMetricTile(
                   title: 'Total Siswa',
                   value: '${_stats.totalUsers}',
-                  subtitle: 'Akun Terdaftar',
+                  subtitle: 'Kelola Akun Siswa >',
                   icon: Icons.people_alt_outlined,
                   color: const Color(0xFF2563EB),
+                  onTap: () => Navigator.pushNamed(context, '/admin_users'),
                   isDark: isDark,
                 ),
               ),
@@ -480,6 +514,81 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   onTap: () => _showAddPackageModal(isDark),
                   isDark: isDark,
                 ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 20),
+
+          // Pusat Operasional & Akademik Siswa
+          Row(
+            children: [
+              Container(width: 3, height: 14, decoration: BoxDecoration(color: const Color(0xFF10B981), borderRadius: BorderRadius.circular(2))),
+              const SizedBox(width: 6),
+              Text('Operasional Siswa & CBT', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary)),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+            childAspectRatio: 2.1,
+            children: [
+              _buildOperationalCard(
+                icon: Icons.people_alt_rounded,
+                title: 'Pengguna & Siswa',
+                subtitle: 'Kelola akun siswa',
+                color: const Color(0xFF2563EB),
+                onTap: () => Navigator.pushNamed(context, '/admin_users'),
+                isDark: isDark,
+              ),
+              _buildOperationalCard(
+                icon: Icons.emoji_events_rounded,
+                title: 'Hasil Tryout CBT',
+                subtitle: 'Leaderboard & nilai',
+                color: const Color(0xFF06B6D4),
+                onTap: () => Navigator.pushNamed(context, '/admin_tryouts'),
+                isDark: isDark,
+              ),
+              _buildOperationalCard(
+                icon: Icons.headset_mic_rounded,
+                title: 'Pusat Bantuan',
+                subtitle: 'Tiket & kendala siswa',
+                color: const Color(0xFFF59E0B),
+                onTap: () => Navigator.pushNamed(context, '/admin_support'),
+                isDark: isDark,
+              ),
+              _buildOperationalCard(
+                icon: Icons.star_rounded,
+                title: 'Moderasi Testimoni',
+                subtitle: 'Persetujuan review',
+                color: const Color(0xFF8B5CF6),
+                onTap: () => Navigator.pushNamed(context, '/admin_testimonials'),
+                isDark: isDark,
+              ),
+              _buildOperationalCard(
+                icon: Icons.key_rounded,
+                title: 'Kunci Akses Siswa',
+                subtitle: 'Token pendaftaran',
+                color: const Color(0xFF10B981),
+                onTap: () => Navigator.pushNamed(context, '/admin_enroll_keys'),
+                isDark: isDark,
+              ),
+              _buildOperationalCard(
+                icon: Icons.notifications_active_rounded,
+                title: 'Notifikasi Masuk',
+                subtitle: 'Aktivitas terkini',
+                badgeText: _unreadNotifsCount > 0 ? '$_unreadNotifsCount Baru' : null,
+                color: const Color(0xFFEF4444),
+                onTap: () async {
+                  await Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminNotificationsScreen()));
+                  if (mounted) setState(() => _unreadNotifsCount = 0);
+                },
+                isDark: isDark,
               ),
             ],
           ),
@@ -1287,6 +1396,63 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
           ),
 
+          // Operational Modules in Settings
+          const SizedBox(height: 12),
+          Text(
+            'MODUL OPERASIONAL ADMIN',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: isDark ? AppTheme.darkTextMuted : AppTheme.textMuted,
+              letterSpacing: 0.8,
+            ),
+          ),
+          const SizedBox(height: 8),
+          _buildSettingsTile(
+            icon: Icons.notifications_outlined,
+            title: 'Pusat Notifikasi Aktivitas',
+            subtitle: 'Pantau pesanan, transaksi, dan aktivitas terbaru',
+            onTap: () => Navigator.pushNamed(context, '/admin_notifications'),
+            isDark: isDark,
+          ),
+          _buildSettingsTile(
+            icon: Icons.people_outline_rounded,
+            title: 'Kelola Pengguna & Siswa',
+            subtitle: 'Daftar akun siswa, guru, dan hak akses',
+            onTap: () => Navigator.pushNamed(context, '/admin_users'),
+            isDark: isDark,
+          ),
+          _buildSettingsTile(
+            icon: Icons.emoji_events_outlined,
+            title: 'Hasil & Ranking Tryout CBT',
+            subtitle: 'Nilai, passing grade, dan leaderboard siswa',
+            onTap: () => Navigator.pushNamed(context, '/admin_tryouts'),
+            isDark: isDark,
+          ),
+          _buildSettingsTile(
+            icon: Icons.headset_mic_outlined,
+            title: 'Pusat Bantuan & Tiket Siswa',
+            subtitle: 'Respon keluhan dan pesan kendala belajar siswa',
+            onTap: () => Navigator.pushNamed(context, '/admin_support'),
+            isDark: isDark,
+          ),
+          _buildSettingsTile(
+            icon: Icons.star_border_rounded,
+            title: 'Moderasi Testimoni & Review',
+            subtitle: 'Setujui atau tolak ulasan siswa untuk publikasi',
+            onTap: () => Navigator.pushNamed(context, '/admin_testimonials'),
+            isDark: isDark,
+          ),
+          _buildSettingsTile(
+            icon: Icons.key_outlined,
+            title: 'Kunci Akses Siswa (Enrollment Keys)',
+            subtitle: 'Generate token akses paket untuk sekolah mitra',
+            onTap: () => Navigator.pushNamed(context, '/admin_enroll_keys'),
+            isDark: isDark,
+          ),
+
+          const SizedBox(height: 8),
+
           _buildSettingsTile(
             icon: Icons.logout_rounded,
             title: 'Keluar dari Sesi Administrator',
@@ -1308,8 +1474,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     required IconData icon,
     required Color color,
     required bool isDark,
+    VoidCallback? onTap,
   }) {
-    return Container(
+    final tile = Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isDark ? AppTheme.darkCardColor : Colors.white,
@@ -1344,9 +1511,107 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           Text(
             subtitle,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 9, color: isDark ? AppTheme.darkTextMuted : AppTheme.textMuted),
+            style: TextStyle(fontSize: 9, color: onTap != null ? color : (isDark ? AppTheme.darkTextMuted : AppTheme.textMuted), fontWeight: onTap != null ? FontWeight.bold : FontWeight.normal),
           ),
         ],
+      ),
+    );
+
+    if (onTap != null) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: tile,
+      );
+    }
+    return tile;
+  }
+
+  Widget _buildOperationalCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+    String? badgeText,
+    required bool isDark,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: isDark ? AppTheme.darkCardColor : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withValues(alpha: 0.25)),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.04),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 18),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          title,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+                          ),
+                        ),
+                      ),
+                      if (badgeText != null) ...[
+                        const SizedBox(width: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEF4444),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            badgeText,
+                            style: const TextStyle(color: Colors.white, fontSize: 7.5, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    subtitle,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 9.5,
+                      color: isDark ? AppTheme.darkTextMuted : AppTheme.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
