@@ -21,7 +21,6 @@ class _VideoListScreenState extends State<VideoListScreen> {
   final List<String> _subjects = ['Semua', 'Matematika', 'Sains/Fisika', 'Kimia', 'Olimpiade'];
   List<VideoModel> _videos = VideoService.getDemoVideosList();
   bool _isLoading = false;
-  String? _selectedPackageId;
 
   @override
   void initState() {
@@ -71,18 +70,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
       }
     }
 
-    // 3. User selected package from chips
-    if (_selectedPackageId != null) {
-      try {
-        return packageProvider.enrolledPackages.firstWhere((p) => p.id == _selectedPackageId);
-      } catch (_) {
-        try {
-          return packageProvider.packages.firstWhere((p) => p.id == _selectedPackageId);
-        } catch (_) {}
-      }
-    }
-
-    // 4. Fallback to first enrolled package
+    // 3. Fallback to first enrolled package
     if (packageProvider.enrolledPackages.isNotEmpty) {
       return packageProvider.enrolledPackages.first;
     }
@@ -120,58 +108,6 @@ class _VideoListScreenState extends State<VideoListScreen> {
       ),
       body: Column(
         children: [
-          // If student has multiple enrolled packages, show package selector switcher
-          if (enrolledList.length > 1)
-            Container(
-              height: 38,
-              margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
-                itemCount: enrolledList.length,
-                itemBuilder: (context, index) {
-                  final pkg = enrolledList[index];
-                  final isSelected = (activePkg?.id == pkg.id);
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _selectedPackageId = pkg.id;
-                      });
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.only(right: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: isSelected ? AppTheme.primaryBlue : (isDark ? const Color(0xFF1E293B) : Colors.white),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: isSelected ? AppTheme.primaryBlue : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.school_rounded,
-                            size: 13,
-                            color: isSelected ? Colors.white : AppTheme.primaryBlue,
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            pkg.title,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                              color: isSelected ? Colors.white : (isDark ? Colors.white70 : AppTheme.textPrimary),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-
           // Package Info & Shortcut Banner
           if (activePkg != null)
             Container(
