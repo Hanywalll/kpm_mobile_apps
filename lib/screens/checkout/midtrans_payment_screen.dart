@@ -8,6 +8,7 @@ import '../../core/utils/formatter.dart';
 import '../../models/order_model.dart';
 import '../../models/package_model.dart';
 import '../../providers/package_provider.dart';
+import '../main_navigation_screen.dart';
 import 'payment_receipt_screen.dart';
 
 class MidtransPaymentScreen extends StatefulWidget {
@@ -288,16 +289,16 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
               Text('Status Pembayaran', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
             ],
           ),
-          content: Column(
+          content: const Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Transaksi saat ini masih berstatus PENDING (Menunggu Pembayaran).',
                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 8),
-              const Text(
+              SizedBox(height: 8),
+              Text(
                 'Pembayaran belum terdeteksi. Silakan selesaikan transfer atau gunakan tombol "Bayar Langsung" untuk konfirmasi instan.',
                 style: TextStyle(fontSize: 12, height: 1.4, color: Colors.black87),
               ),
@@ -1018,9 +1019,9 @@ class _MidtransPaymentScreenState extends State<MidtransPaymentScreen> {
           const SizedBox(height: 16),
 
           // Step-by-step instructions
-          Text(
+          const Text(
             'Cara Uji Coba di Simulator Midtrans:',
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
           ),
           const SizedBox(height: 8),
           _instructionStep('1', 'Nomor VA di atas otomatis disalin saat Anda klik tombol biru.'),

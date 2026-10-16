@@ -14,7 +14,7 @@ class PackageProvider with ChangeNotifier {
   List<PackageModel> _packages = [];
   List<PackageModel> _enrolledPackages = [];
   List<OrderModel> _userOrders = [];
-  List<PackageModel> _cartItems = [];
+  final List<PackageModel> _cartItems = [];
   PackageModel? _selectedPackage;
   bool _isLoading = false;
   String? _errorMessage;

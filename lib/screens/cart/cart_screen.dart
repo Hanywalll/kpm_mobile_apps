@@ -82,8 +82,8 @@ class _CartScreenState extends State<CartScreen> {
                   context: context,
                   builder: (ctx) => AlertDialog(
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    title: Row(
-                      children: const [
+                    title: const Row(
+                      children: [
                         Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 24),
                         SizedBox(width: 8),
                         Expanded(
